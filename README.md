@@ -1,2 +1,2 @@
-adaptive_images
-===============
+AdaptiveImages
+==============
