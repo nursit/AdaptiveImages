@@ -486,8 +486,7 @@ class AdaptiveImages {
 		$q = round($this->LowsrcJpgQuality-((min($max_width_1x, $wfallback)*$h/$w*min($max_width_1x, $wfallback))/75000-6));
 		$q = min($q, round($this->LowsrcJpgQuality)*1.5);
 		$q = max($q, round($this->LowsrcJpgQuality)*0.5);
-		$fallback = $this->image_aplatir($fallback, 'jpg', $this->LowsrcJpgBgColor, $q);
-		$images["fallback"] = $this->tagAttribute($fallback, "src");
+		$images["fallback"] = $this->img2JPG($fallback, $this->LowsrcJpgBgColor, $q);
 
 		// l'image est reduite a la taille maxi (version IE)
 		$src = $this->processBkptImage($src,$max_width_1x,$max_width_1x,'10x',$extension);
@@ -589,7 +588,7 @@ class AdaptiveImages {
 		$img = $this->setTagAttribute($img,"class","adapt-img $class");
 		$img = $this->setTagAttribute($img,"onmousedown","adaptImgFix(this)");
 		// $img = setTagAttribute($img,"onkeydown","adaptImgFix(this)"); // usefull ?
-		$out .= "<!--[if !IE]><!--><span class=\"adapt-img-wrapper $cid $extension\">$img</span>\n<style>$style</style><!--<![endif]-->";
+		$out .= "<!--[if !IE]><!--><span class=\"adapt-img-wrapper $cid $extension\">$img</span>\n<style>".$style."</style><!--<![endif]-->";
 
 		return $out;
 	}
@@ -846,10 +845,93 @@ class AdaptiveImages {
 		return $encoded;
 	}
 
-	protected function image_aplatir(){
 
+	// 1/ Aplatir une image semi-transparente (supprimer couche alpha)
+	// en remplissant la transparence avec couleur choisir $coul.
+	// 2/ Forcer le format de sauvegarde (jpg, png, gif)
+	// pour le format jpg, $qualite correspond au niveau de compression (defaut 85)
+	// pour le format gif, $qualite correspond au nombre de couleurs dans la palette (defaut 128)
+	// pour le format png, $qualite correspond au nombre de couleur dans la palette ou si 0 a une image truecolor (defaut truecolor)
+	// attention, seul 128 est supporte en l'etat (production d'images avec palette reduite pas satisfaisante)
+	// 3/ $transparence a "true" permet de conserver la transparence (utile pour conversion GIF)
+	function img2JPG($im, $coul='000000', $qualite=NULL) {
+		$format='jpg';
+		$fonction = array('img2JPG', func_get_args());
+		$image = _image_valeurs_trans($im, "img2JPG-$format-$coul-$qualite", $format, $fonction);
+
+		if (!$image) return $im;
+
+		include_spip('inc/filtres');
+		$couleurs = _couleur_hex_to_dec($coul);
+		$dr= $couleurs["red"];
+		$dv= $couleurs["green"];
+		$db= $couleurs["blue"];
+
+		$x_i = $image["largeur"];
+		$y_i = $image["hauteur"];
+
+		$im = $image["fichier"];
+
+		$creer = $image["creer"];
+
+		if ($creer) {
+			$im = @$image["fonction_imagecreatefrom"]($im);
+			imagepalettetotruecolor($im);
+			$im_ = imagecreatetruecolor($x_i, $y_i);
+			if ($image["format_source"] == "gif" AND function_exists('ImageCopyResampled')) {
+				// Si un GIF est transparent,
+				// fabriquer un PNG transparent
+				// Conserver la transparence
+				@imagealphablending($im_, false);
+				@imagesavealpha($im_,true);
+				if (function_exists("imageAntiAlias")) imageAntiAlias($im_,true);
+				@ImageCopyResampled($im_, $im, 0, 0, 0, 0, $x_i, $y_i, $x_i, $y_i);
+				imagedestroy($im);
+				$im = $im_;
+			}
+
+			// allouer la couleur de fond
+			$color_t = ImageColorAllocate( $im_, $dr, $dv, $db);
+
+			imagefill ($im_, 0, 0, $color_t);
+
+			for ($x = 0; $x < $x_i; $x++) {
+				for ($y=0; $y < $y_i; $y++) {
+
+					$rgb = ImageColorAt($im, $x, $y);
+					$a = ($rgb >> 24) & 0xFF;
+					$r = ($rgb >> 16) & 0xFF;
+					$g = ($rgb >> 8) & 0xFF;
+					$b = $rgb & 0xFF;
+
+					$a = (127-$a) / 127;
+
+					if ($a == 1) { // Limiter calculs
+						$r = $r;
+						$g = $g;
+						$b = $b;
+					}
+					else if ($a == 0) { // Limiter calculs
+						$r = $dr;
+						$g = $dv;
+						$b = $db;
+
+					} else {
+						$r = round($a * $r + $dr * (1-$a));
+						$g = round($a * $g + $dv * (1-$a));
+						$b = round($a * $b + $db * (1-$a));
+					}
+					$a = (1-$a) *127;
+					$color = ImageColorAllocateAlpha( $im_, $r, $g, $b, $a);
+					imagesetpixel ($im_, $x, $y, $color);
+				}
+			}
+			$this->_image_gd_output($im_, $image, $qualite);
+			imagedestroy($im_);
+			imagedestroy($im);
+		}
+		return $image["fichier_dest"];
 	}
-
 
 	function imgSharpResize($source, $taille = 0, $taille_y = 0, $qualite=null){
 		// ordre de preference des formats graphiques pour creer les vignettes
@@ -1156,6 +1238,29 @@ class AdaptiveImages {
 			return $ret;
 		}
 		return false;
+	}
+
+
+	// Transforme une image a palette indexee (256 couleurs max) en "vraies" couleurs RGB
+	// Existe seulement pour compatibilite avec PHP < 5.5
+	// http://doc.spip.org/@imagepalettetotruecolor
+	function imagepalettetotruecolor(&$img) {
+		if ($img AND !imageistruecolor($img) AND function_exists('imagecreatetruecolor')) {
+			$w = imagesx($img);
+			$h = imagesy($img);
+			$img1 = imagecreatetruecolor($w,$h);
+			//Conserver la transparence si possible
+			if(function_exists('ImageCopyResampled')) {
+				if (function_exists("imageAntiAlias")) imageAntiAlias($img1,true);
+				@imagealphablending($img1, false);
+				@imagesavealpha($img1,true);
+				@ImageCopyResampled($img1, $img, 0, 0, 0, 0, $w, $h, $w, $h);
+			} else {
+				imagecopy($img1,$img,0,0,0,0,$w,$h);
+			}
+
+			$img = $img1;
+		}
 	}
 }
 
