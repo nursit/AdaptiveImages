@@ -234,7 +234,7 @@ class AdaptiveImages {
 		preg_match_all(",<img\s[^>]*>,Uims",$html,$matches,PREG_SET_ORDER);
 		if (count($matches)){
 			foreach($matches as $m){
-				$ri = $this->ProcessImgTag($m[0], $bkpt, $max_width_1x);
+				$ri = $this->processImgTag($m[0], $bkpt, $max_width_1x);
 				if ($ri!==$m[0]){
 					$replace[$m[0]] = $ri;
 				}
@@ -259,7 +259,7 @@ class AdaptiveImages {
 	 *   x est la resolution (10x => 1, 15x => 1.5, 20x => 2)
 	 *   file le chemin vers le fichier source
 	 */
-	public function DeliverBkptImage($path){
+	public function deliverBkptImage($path){
 
 		$file = adaptive_images_bkpt_image_from_path($path, $mime);
 		if (!$file
@@ -296,7 +296,7 @@ class AdaptiveImages {
 	 * @return string
 	 *   name of image file
 	 */
-	protected function ProcessBkptImage($src, $wkpt, $wx, $x, $extension, $force=false){
+	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force=false){
 		$dest = _DIR_VAR."adapt-img/$wkpt/$x/$src";
 		if (($exist=file_exists($dest)) AND filemtime($dest)>=filemtime($src))
 			return $dest;
@@ -318,7 +318,7 @@ class AdaptiveImages {
 			AND (
 			  is_dir($f="$d/".($sd=array_shift($dirs)))
 			  OR
-			  $f = $this->MkDir($d,$sd)
+			  $f = $this->mkDir($d,$sd)
 			)
 		) $d = $f;
 
@@ -326,7 +326,7 @@ class AdaptiveImages {
 
 		if (in_array($extension,array('jpg','jpeg')) AND $x!='10x')
 			$i = $this->image_aplatir($i,'jpg',$this->LowsrcJpgBgColor,$x=='15x' ? $this->X15JpgQuality : $this->X20JpgQuality);
-		$i = $this->TagAttribute($i,"src");
+		$i = $this->tagAttribute($i,"src");
 		@copy($i,$dest);
 
 		return file_exists($dest)?$dest:$src;
@@ -342,7 +342,7 @@ class AdaptiveImages {
 	 * @param string $mime
 	 * @return string
 	 */
-	protected function ProcessBkptImageFromPath($arg,&$mime){
+	protected function processBkptImageFromPath($arg,&$mime){
 		$base = _DIR_VAR."adapt-img/";
 		if (strncmp($arg,$base,strlen($base))==0)
 			$arg = substr($arg,strlen($base));
@@ -354,7 +354,7 @@ class AdaptiveImages {
 
 		$parts = pathinfo($src);
 		$extension = strtolower($parts['extension']);
-		$mime = $this->ExtensionToMimeType($extension);
+		$mime = $this->extensionToMimeType($extension);
 		$dpi = array('10x'=>1,'15x'=>1.5,'20x'=>2);
 
 		if (!$wkpt
@@ -365,7 +365,7 @@ class AdaptiveImages {
 		}
 		$wx = intval(round($wkpt * $dpi[$x]));
 
-		$file = $this->ProcessBkptImage($src, $wkpt, $wx, $x, $extension, true);
+		$file = $this->processBkptImage($src, $wkpt, $wx, $x, $extension, true);
 		return $file;
 	}
 
@@ -380,7 +380,7 @@ class AdaptiveImages {
 	 * @param int $max_width_1x
 	 * @return string
 	 */
-	protected function ProcessImgTag($img, $bkpt, $max_width_1x){
+	protected function processImgTag($img, $bkpt, $max_width_1x){
 		if (!$img) return $img;
 		if (strpos($img, "adapt-img")!==false)
 			return $img;
@@ -397,12 +397,12 @@ class AdaptiveImages {
 		list($h, $w) = $this->imgSize($img);
 		if (!$w OR $w<=$this->MinWidth1x) return $img;
 
-		$src = trim($this->TagAttribute($img, 'src'));
+		$src = trim($this->tagAttribute($img, 'src'));
 		if (strlen($src)<1){
 			$src = $img;
 			$img = "<img src='".$src."' />";
 		}
-		$src_mobile = $this->TagAttribute($img, 'data-src-mobile');
+		$src_mobile = $this->tagAttribute($img, 'data-src-mobile');
 
 		// on ne touche pas aux data:uri
 		if (strncmp($src, "data:", 5)==0)
@@ -441,7 +441,7 @@ class AdaptiveImages {
 				if ($wkx>$w)
 					$images[$wk][$k] = $src;
 				else {
-					$images[$wk][$k] = $this->ProcessBkptImage($is_mobile ? $src_mobile : $src, $wk, $wkx, $k, $extension);
+					$images[$wk][$k] = $this->processBkptImage($is_mobile ? $src_mobile : $src, $wk, $wkx, $k, $extension);
 				}
 			}
 			if ($wk<=$max_width_1x AND ($is_mobile OR !$src_mobile)){
@@ -461,7 +461,7 @@ class AdaptiveImages {
 		// on la genere immediatement car on en a besoin
 		if (!file_exists($fallback)){
 			$mime = "";
-			$this->ProcessBkptImageFromPath($fallback, $mime);
+			$this->processBkptImageFromPath($fallback, $mime);
 		}
 		// la qualite est reduite si la taille de l'image augmente, pour limiter le poids de l'image
 		// regle de 3 au feeling, _ADAPTIVE_IMAGES_LOWSRC_JPG_QUALITY correspond a une image de 450kPx
@@ -470,12 +470,12 @@ class AdaptiveImages {
 		$q = min($q, round($this->LowsrcJpgQuality)*1.5);
 		$q = max($q, round($this->LowsrcJpgQuality)*0.5);
 		$fallback = $this->image_aplatir($fallback, 'jpg', $this->LowsrcJpgBgColor, $q);
-		$images["fallback"] = $this->TagAttribute($fallback, "src");
+		$images["fallback"] = $this->tagAttribute($fallback, "src");
 
 		// l'image est reduite a la taille maxi (version IE)
 		$img = $this->image_reduire($img, $max_width_1x, 10000);
 		// generer le markup
-		return $this->ImgAdaptiveMarkup($img, $images, $w, $h, $extension, $max_width_1x);
+		return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $max_width_1x);
 	}
 
 
@@ -491,15 +491,15 @@ class AdaptiveImages {
 	 * @param int $max_width_1x
 	 * @return string
 	 */
-	function ImgAdaptiveMarkup($img, $rwd_images, $width, $height, $extension, $max_width_1x){
-		$class = $this->TagAttribute($img,"class");
+	function imgAdaptiveMarkup($img, $rwd_images, $width, $height, $extension, $max_width_1x){
+		$class = $this->tagAttribute($img,"class");
 		if (strpos($class,"adapt-img")!==false) return $img;
 		ksort($rwd_images);
 		$cid = "c".crc32(serialize($rwd_images));
 		$style = "";
 		if ($class) $class = " $class";
 		$class = "$cid$class";
-		$img = $this->SetTagAttribute($img,"class","adapt-img-ie $class");
+		$img = $this->setTagAttribute($img,"class","adapt-img-ie $class");
 
 		// image de fallback fournie ?
 		$fallback_file = "";
@@ -513,7 +513,7 @@ class AdaptiveImages {
 			$fallback_file = $fallback_file['10x'];
 		}
 		// embarquer le fallback en DATA URI si moins de 32ko (eviter une page trop grosse)
-		$fallback_file = $this->Base64EmbedFile($fallback_file);
+		$fallback_file = $this->base64EmbedFile($fallback_file);
 
 		$prev_width = 0;
 		$medias = array();
@@ -563,10 +563,10 @@ class AdaptiveImages {
 		$style .= implode("",$medias);
 
 		$out = "<!--[if IE]>$img<![endif]-->\n";
-		$img = $this->SetTagAttribute($img,"src",$fallback_file);
-		$img = $this->SetTagAttribute($img,"class","adapt-img $class");
-		$img = $this->SetTagAttribute($img,"onmousedown","adaptImgFix(this)");
-		// $img = SetTagAttribute($img,"onkeydown","adaptImgFix(this)"); // usefull ?
+		$img = $this->setTagAttribute($img,"src",$fallback_file);
+		$img = $this->setTagAttribute($img,"class","adapt-img $class");
+		$img = $this->setTagAttribute($img,"onmousedown","adaptImgFix(this)");
+		// $img = setTagAttribute($img,"onkeydown","adaptImgFix(this)"); // usefull ?
 		$out .= "<!--[if !IE]><!--><span class=\"adapt-img-wrapper $cid $extension\">$img</span>\n<style>$style</style><!--<![endif]-->";
 
 		return $out;
@@ -586,12 +586,12 @@ class AdaptiveImages {
 		$srcWidth = 0;
 		$srcHeight = 0;
 
-		$logo = $this->TagAttribute($img,'src');
+		$logo = $this->tagAttribute($img,'src');
 
 		if (!$logo) $logo = $img;
 		else {
-			$srcWidth = $this->TagAttribute($img,'width');
-			$srcHeight = $this->TagAttribute($img,'height');
+			$srcWidth = $this->tagAttribute($img,'width');
+			$srcHeight = $this->tagAttribute($img,'height');
 		}
 
 		// never process on remote img
@@ -620,7 +620,7 @@ class AdaptiveImages {
 
 	/**
 	 * recuperer un attribut d'une balise html
-	 * la regexp est mortelle : cf. tests/filtres/TagAttribute.php
+	 * la regexp est mortelle : cf. tests/filtres/tagAttribute.php
 	 * Si on a passe un tableau de balises, renvoyer un tableau de resultats
 	 * (dans ce cas l'option $complet n'est pas disponible)
 	 * @param $balise
@@ -628,7 +628,7 @@ class AdaptiveImages {
 	 * @param $complet
 	 * @return array|null|string
 	 */
-	protected function TagAttribute($balise, $attribut, $complet = false) {
+	protected function tagAttribute($balise, $attribut, $complet = false) {
 		if (preg_match(
 		',(^.*?<(?:(?>\s*)(?>[\w:.-]+)(?>(?:=(?:"[^"]*"|\'[^\']*\'|[^\'"]\S*))?))*?)(\s+'
 		.$attribut
@@ -659,7 +659,7 @@ class AdaptiveImages {
 	/**
 	 * modifier (ou inserer) un attribut html dans une balise
 	 *
-	 * http://doc.spip.org/@SetTagAttribute
+	 * http://doc.spip.org/@setTagAttribute
 	 *
 	 * @param string $balise
 	 * @param string $attribut
@@ -668,7 +668,7 @@ class AdaptiveImages {
 	 * @param bool $vider
 	 * @return string
 	 */
-	protected function SetTagAttribute($balise, $attribut, $val, $proteger=true, $vider=false) {
+	protected function setTagAttribute($balise, $attribut, $val, $proteger=true, $vider=false) {
 		// preparer l'attribut
 		// supprimer les &nbsp; etc mais pas les balises html
 		// qui ont un sens dans un attribut value d'un input
@@ -684,7 +684,7 @@ class AdaptiveImages {
 		else
 			$insert = " $attribut='$val'";
 
-		list($old, $r) = $this->TagAttribute($balise, $attribut, true);
+		list($old, $r) = $this->tagAttribute($balise, $attribut, true);
 
 		if ($old !== NULL) {
 			// Remplacer l'ancien attribut du meme nom
@@ -713,7 +713,7 @@ class AdaptiveImages {
 	 * @return string
 	 * @throws Exception
 	 */
-	protected function MkDir($base, $subdir='', $nobase = false, $tantpis=false) {
+	protected function mkDir($base, $subdir='', $nobase = false, $tantpis=false) {
 		static $dirs = array();
 
 		$base = str_replace("//", "/", $base);
@@ -749,7 +749,7 @@ class AdaptiveImages {
 	 * @param $extension
 	 * @return string
 	 */
-	protected function ExtensionToMimeType($extension){
+	protected function extensionToMimeType($extension){
 		static $MimeTable = array(
 			'jpg' => 'image/jpeg',
 			'jpeg' => 'image/jpeg',
@@ -810,7 +810,7 @@ class AdaptiveImages {
 	 *     URI Scheme of base64 if possible,
 	 *     or URL from source file
 	 */
-	function Base64EmbedFile ($filename, $maxsize = 32768) {
+	function base64EmbedFile ($filename, $maxsize = 32768) {
 		$extension = substr(strrchr($filename,'.'),1);
 
 		if (!file_exists($filename)
@@ -819,7 +819,7 @@ class AdaptiveImages {
 			return $filename;
 
 		$base64 = base64_encode($content);
-		$encoded = 'data:'.$this->ExtensionToMimeType($extension).';base64,'.$base64;
+		$encoded = 'data:'.$this->extensionToMimeType($extension).';base64,'.$base64;
 
 		return $encoded;
 	}
