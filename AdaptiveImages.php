@@ -311,9 +311,11 @@ class AdaptiveImages {
 	 *   true to force immediate image building if not existing or if too old
 	 * @return string
 	 *   name of image file
+	 * @throws Exception
 	 */
 	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force=false){
-		$dest = $this->DirectoryDest."$wkpt/$x/$src";
+		$dir_dest = $this->DirectoryDest."$wkpt/$x/";
+		$dest = $dir_dest.$src;
 		if (($exist=file_exists($dest)) AND filemtime($dest)>=filemtime($src))
 			return $dest;
 
@@ -327,17 +329,6 @@ class AdaptiveImages {
 		if (!$force)
 			return $dest;
 
-		// creer l'arbo
-		$dirs = explode("/",$dest);
-		$d = "";
-		while(count($dirs)>1
-			AND (
-			  is_dir($f="$d/".($sd=array_shift($dirs)))
-			  OR
-			  $f = $this->mkDir($d,$sd)
-			)
-		) $d = $f;
-
 		switch($x){
 			case '10x':
 				$quality = $this->X10JpgQuality;
@@ -350,9 +341,10 @@ class AdaptiveImages {
 				break;
 		}
 
-		$i = $this->imgSharpResize($src,$wx,10000,$quality);
-		@copy($i,$dest);
-
+		$i = $this->imgSharpResize($src,$dir_dest,$wx,10000,$quality);
+		if ($i AND $i!==$dest){
+			throw new Exception("Error in imgSharpResize : return $i but $dest expected");
+		}
 		return file_exists($dest)?$dest:$src;
 	}
 
@@ -486,7 +478,7 @@ class AdaptiveImages {
 		$q = round($this->LowsrcJpgQuality-((min($max_width_1x, $wfallback)*$h/$w*min($max_width_1x, $wfallback))/75000-6));
 		$q = min($q, round($this->LowsrcJpgQuality)*1.5);
 		$q = max($q, round($this->LowsrcJpgQuality)*0.5);
-		$images["fallback"] = $this->img2JPG($fallback, $this->LowsrcJpgBgColor, $q);
+		$images["fallback"] = $this->img2JPG($fallback, $this->DirectoryDest."fallback/", $this->LowsrcJpgBgColor, $q);
 
 		// l'image est reduite a la taille maxi (version IE)
 		$src = $this->processBkptImage($src,$max_width_1x,$max_width_1x,'10x',$extension);
@@ -723,48 +715,6 @@ class AdaptiveImages {
 		return $balise;
 	}
 
-
-	/**
-	 * Mkdir $base/${subdir}/
-	 *
-	 * @param $base
-	 * @param string $subdir
-	 * @param bool $nobase
-	 * @param bool $tantpis
-	 * @return string
-	 * @throws Exception
-	 */
-	protected function mkDir($base, $subdir='', $nobase = false, $tantpis=false) {
-		static $dirs = array();
-
-		$base = str_replace("//", "/", $base);
-
-		# suppr le dernier caractere si c'est un / ou un _
-		$base = rtrim($base, '/_');
-
-		if (!strlen($subdir)) {
-			$n = strrpos($base, "/");
-			if ($n === false) return $nobase ? '' : ($base .'/');
-			$subdir = substr($base, $n+1);
-			$base = substr($base, 0, $n+1);
-		} else {
-			$base .= '/';
-			$subdir = str_replace("/", "", $subdir);
-		}
-
-		$baseaff = $nobase ? '' : $base;
-		if (isset($dirs[$base.$subdir]))
-			return $baseaff.$dirs[$base.$subdir];
-
-		$path = $base.$subdir; # $path = 'IMG/distant/pdf' ou 'IMG/distant_pdf'
-
-		if (!@is_dir("$path/") AND !@mkdir($path)){
-			throw new Exception("Unable to mkdir {$path}");
-		}
-
-		return $baseaff.($dirs[$base.$subdir] = "$subdir/");
-	}
-
 	/**
 	 * Provide Mime Type for Image file Extension
 	 * @param $extension
@@ -854,12 +804,11 @@ class AdaptiveImages {
 	// pour le format png, $qualite correspond au nombre de couleur dans la palette ou si 0 a une image truecolor (defaut truecolor)
 	// attention, seul 128 est supporte en l'etat (production d'images avec palette reduite pas satisfaisante)
 	// 3/ $transparence a "true" permet de conserver la transparence (utile pour conversion GIF)
-	function img2JPG($im, $coul='000000', $qualite=NULL) {
+	function img2JPG($im, $dir_dest, $coul='000000', $qualite=NULL) {
 		$format='jpg';
-		$fonction = array('img2JPG', func_get_args());
-		$image = _image_valeurs_trans($im, "img2JPG-$format-$coul-$qualite", $format, $fonction);
+		$infos = $this->readSourceImage($im, $dir_dest, $format, true);
 
-		if (!$image) return $im;
+		if (!$infos) return $im;
 
 		include_spip('inc/filtres');
 		$couleurs = _couleur_hex_to_dec($coul);
@@ -867,18 +816,18 @@ class AdaptiveImages {
 		$dv= $couleurs["green"];
 		$db= $couleurs["blue"];
 
-		$x_i = $image["largeur"];
-		$y_i = $image["hauteur"];
+		$x_i = $infos["largeur"];
+		$y_i = $infos["hauteur"];
 
-		$im = $image["fichier"];
+		$im = $infos["fichier"];
 
-		$creer = $image["creer"];
+		$creer = $infos["creer"];
 
 		if ($creer) {
-			$im = @$image["fonction_imagecreatefrom"]($im);
-			imagepalettetotruecolor($im);
+			$im = @$infos["fonction_imagecreatefrom"]($im);
+			$this->imagepalettetotruecolor($im);
 			$im_ = imagecreatetruecolor($x_i, $y_i);
-			if ($image["format_source"] == "gif" AND function_exists('ImageCopyResampled')) {
+			if ($infos["format_source"] == "gif" AND function_exists('ImageCopyResampled')) {
 				// Si un GIF est transparent,
 				// fabriquer un PNG transparent
 				// Conserver la transparence
@@ -926,18 +875,18 @@ class AdaptiveImages {
 					imagesetpixel ($im_, $x, $y, $color);
 				}
 			}
-			$this->_image_gd_output($im_, $image, $qualite);
+			$this->saveGDImage($im_, $infos, $qualite);
 			imagedestroy($im_);
 			imagedestroy($im);
 		}
-		return $image["fichier_dest"];
+		return $infos["fichier_dest"];
 	}
 
-	function imgSharpResize($source, $taille = 0, $taille_y = 0, $qualite=null){
+	function imgSharpResize($source, $dir_dest, $taille = 0, $taille_y = 0, $qualite=null){
 		// ordre de preference des formats graphiques pour creer les vignettes
 		// le premier format disponible, selon la methode demandee, est utilise
 
-		$valeurs = $this->_image_valeurs_trans($source, "reduire_net-{$taille}-{$taille_y}-{$qualite}", false);
+		$valeurs = $this->readSourceImage($source, $dir_dest);
 		if (!$valeurs) return $source;
 
 		if ($taille==0 AND $taille_y>0)
@@ -960,7 +909,7 @@ class AdaptiveImages {
 		// calculer la taille
 		$srcWidth = $valeurs['largeur'];
 		$srcHeight = $valeurs['hauteur'];
-		list($destWidth,$destHeight) = $this->_image_ratio($srcWidth, $srcHeight, $taille, $taille_y);
+		list($destWidth,$destHeight) = $this->computeImageSize($srcWidth, $srcHeight, $taille, $taille_y);
 
 		if ($image['creer']==false)
 			return $image['fichier_dest'];
@@ -1035,7 +984,7 @@ class AdaptiveImages {
 			$valeurs['fichier_dest'] = "$destination.$destFormat";
 			$valeurs['format_dest'] = $format = $destFormat;
 
-			$this->_image_gd_output($destImage, $valeurs, $qualite);
+			$this->saveGDImage($destImage, $valeurs, $qualite);
 
 			if ($srcImage)
 				ImageDestroy($srcImage);
@@ -1048,35 +997,23 @@ class AdaptiveImages {
 
 
 	/**
-	 * Fonctions de traitement d'image
-	 * Uniquement pour GD2.
+	 * Read and preprocess informations about source image
 	 *
 	 * @param string $img
-	 * 		Un tag html <img src=... />.
-	 * @param string $effet
-	 * 		Les nom et paramètres de l'effet à apporter sur l'image
-	 * 		(par exemple : reduire-300-200).
-	 * @param bool|string $forcer_format
-	 * 		Un nom d'extension spécifique demandé (par exemple : jpg, png, txt...
-	 * 		par défaut false : GD se débrouille seule).
-	 * @param array $fonction_creation
-	 * 		Un tableau à 2 éléments. Le premier (string) indique le nom du
-	 * 		filtre de traitement demandé (par exemple : image_reduire) ; le
-	 * 		second (array) est lui-même un tableau reprenant la valeur de $img
-	 * 		et chacun des paramètres passés au filtre.
-	 * @return bool|string|array
-	 * 		false si pas de tag <img,
-	 * 		    si l'extension n'existe pas,
-	 * 		    si le fichier source n'existe pas,
-	 * 		    si les dimensions de la source ne sont pas accessibles,
-	 * 		    si le fichier temporaire n'existe pas,
-	 * 		    si la fonction _imagecreatefrom{extension} n'existe pas ;
-	 * 		"" (chaîne vide) si le fichier source est distant et n'a pas
-	 * 		    réussi à être copié sur le serveur ;
-	 * 		l'appel à la fonction pipeline image_preparer_filtre.
+	 * 		HTML img tag <img src=... /> OR source filename
+	 * @param string $dir_dest
+	 * 		Destination dir of new image
+	 * @param null|string $output_format
+	 * 		forced extension of output image file : jpg, png, gif
+	 * @param bool $hashfilename
+	 *    if true the final file name is a md5 of source file name
+	 *    otherwise final file name keeps the source path and file starting from $dir_dest
+	 * @return bool|array
+	 * 		false in case of error
+	 *    array of image information otherwise
+	 * @throws Exception
 	 */
-	protected function _image_valeurs_trans($img, $effet, $forcer_format = false, $fonction_creation = NULL) {
-		static $images_recalcul = array();
+	protected function readSourceImage($img, $dir_dest, $output_format = null, $hashfilename = false) {
 		if (strlen($img)==0) return false;
 
 		$source = trim($this->tagAttribute($img, 'src'));
@@ -1085,96 +1022,65 @@ class AdaptiveImages {
 			$img = "<img src='$source' />";
 		}
 		# gerer img src="data:....base64"
-		else if (preg_match('@^data:image/(jpe?g|png|gif);base64,(.*)$@isS', $source, $regs)) {
+		# don't process base64
+		else if (preg_match('@^data:image/(jpe?g|png|gif);base64,(.*)$@isS', $source)) {
 			return false;
 		}
 
-		// les protocoles web prennent au moins 3 lettres
+		// don't process distant images
 		if (preg_match(';^(\w{3,7}://);', $source)){
 			return false;
-		}	else {
-			// enlever le timestamp eventuel
-			$source=preg_replace(',[?][0-9]+$,','',$source);
-			$fichier = $source;
 		}
 
-		$terminaison_dest = "";
-		if (preg_match(",\.(gif|jpe?g|png)($|[?]),i", $fichier, $regs)) {
-			$terminaison = strtolower($regs[1]);
-			$terminaison_dest = $terminaison;
+		// remove timestamp as query string
+		$source=preg_replace(',[?][0-9]+$,','',$source);
 
-			if ($terminaison == "gif") $terminaison_dest = "png";
+		$extension_dest = "";
+		if (preg_match(",\.(gif|jpe?g|png)($|[?]),i", $source, $regs)) {
+			$extension = strtolower($regs[1]);
+			$extension_dest = $extension;
+
+			if ($extension == "gif") $extension_dest = "png";
 		}
-		if ($forcer_format!==false) $terminaison_dest = $forcer_format;
+		if (!is_null($output_format)) $extension_dest = $output_format;
 
-		if (!$terminaison_dest) return false;
+		if (!$extension_dest) return false;
 
-		$term_fonction = $terminaison;
-		if ($term_fonction == "jpg") $term_fonction = "jpeg";
-
-		$nom_fichier = substr($fichier, 0, strlen($fichier) - (strlen($terminaison) + 1));
-		$fichier_dest = $nom_fichier;
-		if (@file_exists($f = $fichier)){
-			// on passe la balise img a taille image qui exraira les attributs si possible
-			// au lieu de faire un acces disque sur le fichier
+		if (@file_exists($source)){
 			list ($ret["hauteur"],$ret["largeur"]) = $this->imgSize($img);
-			$date_src = @filemtime($f);
+			$date_src = @filemtime($source);
 		}
 		else
 			return false;
 
-		// pas de taille mesurable
+		// error if no known size
 		if (!($ret["hauteur"] OR $ret["largeur"]))
 			return false;
 
 
-		// cas general :
-		// on a un dossier cache commun et un nom de fichier qui varie avec l'effet
-		// cas particulier de reduire :
-		// un cache par dimension, et le nom de fichier est conserve, suffixe par la dimension aussi
-		$cache = "cache-gd2";
-		if (substr($effet,0,7)=='reduire') {
-			list(,$maxWidth,$maxHeight) = explode('-',$effet);
-			list ($destWidth,$destHeight) = $this->_image_ratio($ret['largeur'], $ret['hauteur'], $maxWidth, $maxHeight);
-			$ret['largeur_dest'] = $destWidth;
-			$ret['hauteur_dest'] = $destHeight;
-			$effet = "L{$destWidth}xH$destHeight";
-			$cache = "cache-vignettes";
-			$fichier_dest = basename($fichier_dest);
-			if (($ret['largeur']<=$maxWidth)&&($ret['hauteur']<=$maxHeight)){
-				// on garde la terminaison initiale car image simplement copiee
-				// et on postfixe son nom avec un md5 du path
-				$terminaison_dest = $terminaison;
-				$fichier_dest .= '-'.substr(md5("$fichier"),0,5);
-			}
-			else
-				$fichier_dest .= '-'.substr(md5("$fichier-$effet"),0,5);
-			$cache = sous_repertoire(_DIR_VAR, $cache);
-			$cache = sous_repertoire($cache, $effet);
-			# cherche un cache existant
-			/*foreach (array('gif','jpg','png') as $fmt)
-				if (@file_exists($cache . $fichier_dest . '.' . $fmt)) {
-					$terminaison_dest = $fmt;
-				}*/
-		}
-		else 	{
-			$fichier_dest = md5("$fichier-$effet");
-			$cache = sous_repertoire(_DIR_VAR, $cache);
-		}
-
-		$fichier_dest = $cache . $fichier_dest . "." .$terminaison_dest;
+		// dest filename : md5(source) or full source path name
+		$nom_fichier = $hashfilename?(substr($source, 0, strlen($source) - (strlen($extension) + 1))):md5($source);
+		$fichier_dest = rtrim($dir_dest,"/") . $nom_fichier . "." . $extension_dest;
 
 		$creer = true;
 		if (@file_exists($f = $fichier_dest)){
 			if (filemtime($f)>=$date_src)
 				$creer = false;
 		}
+		// mkdir complete path if needed
+		if ($creer
+		  AND !is_dir($d=dirname($fichier_dest))){
+			mkdir($d,0777,true);
+			if (!is_dir($d)){
+				throw new Exception("Unable to mkdir {$d}");
+			}
+		}
 
-		$ret["fonction_imagecreatefrom"] = "imagecreatefrom".$term_fonction;
-		$ret["fichier"] = $fichier;
+		$ret["fonction_imagecreatefrom"] = "imagecreatefrom".($extension != 'jpg' ? $extension : 'jpeg');
+		$ret["fichier"] = $source;
 		$ret["fichier_dest"] = $fichier_dest;
-		$ret["format_source"] = ($terminaison != 'jpeg' ? $terminaison : 'jpg');
-		$ret["format_dest"] = $terminaison_dest;
+		$ret["format_source"] = ($extension != 'jpeg' ? $extension : 'jpg');
+		$ret["format_dest"] = $extension_dest;
 		$ret["date_src"] = $date_src;
 		$ret["creer"] = $creer;
 		$ret["tag"] = $img;
@@ -1183,41 +1089,48 @@ class AdaptiveImages {
 		return $ret;
 	}
 
-	// Calculer le ratio
-	// http://doc.spip.org/@image_ratio
-	function _image_ratio($srcWidth, $srcHeight, $maxWidth, $maxHeight) {
+	/**
+	 * Compute new image size according to max Width and max Height and initial width/height ratio
+	 * @param int $srcWidth
+	 * @param int $srcHeight
+	 * @param int $maxWidth
+	 * @param int $maxHeight
+	 * @return array
+	 */
+	function computeImageSize($srcWidth, $srcHeight, $maxWidth, $maxHeight) {
 		$ratioWidth = $srcWidth/$maxWidth;
 		$ratioHeight = $srcHeight/$maxHeight;
 
 		if ($ratioWidth <=1 AND $ratioHeight <=1) {
-			$destWidth = $srcWidth;
-			$destHeight = $srcHeight;
-		} else if ($ratioWidth < $ratioHeight) {
-			$destWidth = $srcWidth/$ratioHeight;
+			return array($srcWidth,$srcHeight);
+		}
+		else if ($ratioWidth < $ratioHeight) {
+			$destWidth = intval(ceil($srcWidth/$ratioHeight));
 			$destHeight = $maxHeight;
 		}
 		else {
 			$destWidth = $maxWidth;
-			$destHeight = $srcHeight/$ratioWidth;
+			$destHeight = intval(ceil($srcHeight/$ratioWidth));
 		}
-		return array (ceil($destWidth), ceil($destHeight),
-			max($ratioWidth,$ratioHeight));
+		return array ($destWidth, $destHeight);
 	}
 
 	/**
-	 * Affiche ou sauvegarde une image au format PNG
+	 * SaveAffiche ou sauvegarde une image au format PNG
 	 * Utilise les fonctions spécifiques GD.
 	 *
-	 * @param ressource $img
-	 * 		Une ressource de type Image GD.
-	 * @param array $valeurs
-	 * @param int $qualite
+	 * @param resource $img
+	 *   GD image resource
+	 * @param array $infos
+	 *   image description
+	 * @param int|null $quality
+	 *   compression quality for JPG images
 	 * @return bool
 	 */
-	protected function _image_gd_output($img, $valeurs, $qualite=null) {
-		$fichier = $valeurs['fichier_dest'];
+	protected function saveGDImage($img, $infos, $quality=null) {
+		$fichier = $infos['fichier_dest'];
 		$tmp = $fichier.".tmp";
-		switch($valeurs['format_dest']){
+		switch($infos['format_dest']){
 			case "gif":
 				$ret = imagepng($img,$tmp);
 				break;
@@ -1226,7 +1139,7 @@ class AdaptiveImages {
 				break;
 			case "jpg":
 			case "jpeg":
-				$ret = imagejpeg($img,$tmp,$qualite);
+				$ret = imagejpeg($img,$tmp,$quality);
 				break;
 		}
 		if(file_exists($tmp)){
@@ -1241,15 +1154,21 @@ class AdaptiveImages {
 	}
 
 
-	// Transforme une image a palette indexee (256 couleurs max) en "vraies" couleurs RGB
-	// Existe seulement pour compatibilite avec PHP < 5.5
-	// http://doc.spip.org/@imagepalettetotruecolor
-	function imagepalettetotruecolor(&$img) {
+	/**
+	 * Convert indexed colors image to true color image
+	 * available in PHP 5.5+ http://www.php.net/manual/fr/function.imagepalettetotruecolor.php
+	 * @param resource $img
+	 * @return bool
+	 */
+	protected function imagepalettetotruecolor(&$img) {
+		if (function_exists("imagepalettetotruecolor"))
+			return imagepalettetotruecolor($img);
+
 		if ($img AND !imageistruecolor($img) AND function_exists('imagecreatetruecolor')) {
 			$w = imagesx($img);
 			$h = imagesy($img);
 			$img1 = imagecreatetruecolor($w,$h);
-			//Conserver la transparence si possible
+			// keep alpha layer if possible
 			if(function_exists('ImageCopyResampled')) {
 				if (function_exists("imageAntiAlias")) imageAntiAlias($img1,true);
 				@imagealphablending($img1, false);
@@ -1260,8 +1179,11 @@ class AdaptiveImages {
 			}
 
 			$img = $img1;
+			return true;
 		}
+		return false;
 	}
+
 }
 
 
