@@ -882,34 +882,28 @@ class AdaptiveImages {
 		return $infos["fichier_dest"];
 	}
 
-	function imgSharpResize($source, $dir_dest, $taille = 0, $taille_y = 0, $qualite=null){
-		// ordre de preference des formats graphiques pour creer les vignettes
-		// le premier format disponible, selon la methode demandee, est utilise
+	function imgSharpResize($source, $dir_dest, $maxWidth = 0, $maxHeight = 0, $qualite=null){
+		$infos = $this->readSourceImage($source, $dir_dest);
+		if (!$infos) return $source;
 
-		$valeurs = $this->readSourceImage($source, $dir_dest);
-		if (!$valeurs) return $source;
-
-		if ($taille==0 AND $taille_y>0)
-			$taille = 10000; # {0,300} -> c'est 300 qui compte
-		elseif ($taille>0 AND $taille_y==0)
-			$taille_y = 10000; # {300,0} -> c'est 300 qui compte
-		elseif ($taille==0 AND $taille_y==0)
+		if ($maxWidth==0 AND $maxHeight==0)
 			return $source;
 
-		$image = $valeurs['fichier'];
-		$format = $valeurs['format_source'];
+		if ($maxWidth==0) $maxWidth = 10000;
+		elseif ($maxHeight==0) $maxHeight = 10000;
 
-		$destdir = dirname($valeurs['fichier_dest']);
-		$destfile = basename($valeurs['fichier_dest'], "." . $valeurs["format_dest"]);
+		$image = $infos['fichier'];
+		$format = $infos['format_source'];
 
-		$format_sortie = $valeurs['format_dest'];
+		$destdir = dirname($infos['fichier_dest']);
+		$destfile = basename($infos['fichier_dest'], "." . $infos["format_dest"]);
 
 		$destination = "$destdir/$destfile";
 
-		// calculer la taille
-		$srcWidth = $valeurs['largeur'];
-		$srcHeight = $valeurs['hauteur'];
-		list($destWidth,$destHeight) = $this->computeImageSize($srcWidth, $srcHeight, $taille, $taille_y);
+		// compute width & height
+		$srcWidth = $infos['largeur'];
+		$srcHeight = $infos['hauteur'];
+		list($destWidth,$destHeight) = $this->computeImageSize($srcWidth, $srcHeight, $maxWidth, $maxHeight);
 
 		if ($image['creer']==false)
 			return $image['fichier_dest'];
@@ -920,9 +914,9 @@ class AdaptiveImages {
 		  AND $srcWidth<=$destWidth
 		  AND $srcHeight<=$destHeight){
 
-			$valeurs['format_dest'] = $format;
-			$valeurs['fichier_dest'] = $destination.".".$format;
-			@copy($image, $valeurs['fichier_dest']);
+			$infos['format_dest'] = $format;
+			$infos['fichier_dest'] = $destination.".".$format;
+			@copy($image, $infos['fichier_dest']);
 
 		}
 		else {
@@ -930,13 +924,13 @@ class AdaptiveImages {
 				spip_log("vignette gd1/gd2 impossible : " . $srcWidth*$srcHeight . "pixels");
 				return $image;
 			}
-			$destFormat = $format_sortie;
+			$destFormat = $infos['format_dest'];
 			if (!$destFormat){
 				spip_log("pas de format pour $image");
 				return $image;
 			}
 
-			$fonction_imagecreatefrom = $valeurs['fonction_imagecreatefrom'];
+			$fonction_imagecreatefrom = $infos['fonction_imagecreatefrom'];
 			if (!function_exists($fonction_imagecreatefrom))
 				return $image;
 			$srcImage = @$fonction_imagecreatefrom($image);
@@ -981,17 +975,17 @@ class AdaptiveImages {
 				imageconvolution($destImage, $arrMatrix, $intSharpness, 0);
 			}
 			// Sauvegarde de l'image destination
-			$valeurs['fichier_dest'] = "$destination.$destFormat";
-			$valeurs['format_dest'] = $format = $destFormat;
+			$infos['fichier_dest'] = "$destination.$destFormat";
+			$infos['format_dest'] = $format = $destFormat;
 
-			$this->saveGDImage($destImage, $valeurs, $qualite);
+			$this->saveGDImage($destImage, $infos, $qualite);
 
 			if ($srcImage)
 				ImageDestroy($srcImage);
 			ImageDestroy($destImage);
 		}
 
-		return $valeurs['fichier_dest'];
+		return $infos['fichier_dest'];
 
 	}
 
