@@ -87,24 +87,27 @@ function action_adapt_img_dist(){
 
 ## Advanced Configuration
 
-
-* Allow progressive rendering og PNG and GIF even without JS :
-  <pre>$AdaptiveImage->nojsPngGifProgressiveRendering = true;</pre>
-* Background color for JPG lowsrc generation (if source has transparency layer)
-  <pre>$AdaptiveImage->lowsrcJpgBgColor = '#eeeeee';</pre>
-* JPG compression quality for JPG lowsrc
-  <pre>$AdaptiveImage->lowsrcJpgQuality = _ADAPTIVE_IMAGES_LOWSRC_JPG_QUALITY;</pre>
-* JPG compression quality for 1x JPG images
-  <pre>$AdaptiveImage->x10JpgQuality = 75;</pre>
-* JPG compression quality for 1.5x JPG images
-  <pre>$AdaptiveImage->x15JpgQuality = 65;</pre>
-* JPG compression quality for 2x JPG images
-  <pre>$AdaptiveImage->x15JpgQuality = 45;</pre>
-* Breakpoints width for image generation
-  <pre>$AdaptiveImage->defaultBkpts = array(160,320,480,640,960,1440);</pre>
+* Directory for storing adaptive images
+  <pre>$AdaptiveImage->destDirectory = "local/adapt-img/";</pre>
 * Default Maximum display width for images
   <pre>$AdaptiveImage->maxWidth1x = 640;</pre>
 * Minimum display width for adaptive images (smaller will be unchanged)
   <pre>$AdaptiveImage->minWidth1x = 320;</pre>
 * Maximum width for delivering mobile version in data-src-mobile=""
   <pre>$AdaptiveImage->maxWidthMobileVersion = 320;</pre>
+* Activade On-Demand images generation
+  <pre>$AdaptiveImage->onDemandImages = true;</pre>
+* Background color for JPG lowsrc generation (if source has transparency layer)
+  <pre>$AdaptiveImage->lowsrcJpgBgColor = '#eeeeee';</pre>
+* Breakpoints width for image generation
+  <pre>$AdaptiveImage->defaultBkpts = array(160,320,480,640,960,1440);</pre>
+* Allow progressive rendering og PNG and GIF even without JS :
+  <pre>$AdaptiveImage->nojsPngGifProgressiveRendering = true;</pre>
+* JPG compression quality for JPG lowsrc
+  <pre>$AdaptiveImage->lowsrcJpgQuality = 10;</pre>
+* JPG compression quality for 1x JPG images
+  <pre>$AdaptiveImage->x10JpgQuality = 75;</pre>
+* JPG compression quality for 1.5x JPG images
+  <pre>$AdaptiveImage->x15JpgQuality = 65;</pre>
+* JPG compression quality for 2x JPG images
+  <pre>$AdaptiveImage->x15JpgQuality = 45;</pre>
