@@ -111,3 +111,8 @@ function action_adapt_img_dist(){
   <pre>$AdaptiveImage->x15JpgQuality = 65;</pre>
 * JPG compression quality for 2x JPG images
   <pre>$AdaptiveImage->x15JpgQuality = 45;</pre>
+
+## Real-life use case
+
+See the implementation in SPIP CMS :
+http://zone.spip.org/trac/spip-zone/browser/_plugins_/adaptive_images/trunk/adaptive_images_options.php
