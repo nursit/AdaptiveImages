@@ -968,8 +968,7 @@ class AdaptiveImages {
 		if ($infos['creer']==false)
 			return $infos['fichier_dest'];
 
-		// Si l'image est de la taille demandee (ou plus petite), simplement
-		// la retourner
+		// If source image is smaller than desired size, keep source
 		if ($srcWidth
 		  AND $srcWidth<=$destWidth
 		  AND $srcHeight<=$destHeight){
@@ -1000,23 +999,26 @@ class AdaptiveImages {
 				return $srcFile;
 			}
 
-			// Initialisation de l'image destination
-			if ($destExt!="gif")
-				$destImage = ImageCreateTrueColor($destWidth, $destHeight);
-			if (!$destImage)
-				$destImage = ImageCreate($destWidth, $destHeight);
+			// Initialization of dest image
+			$destImage = ImageCreateTrueColor($destWidth, $destHeight);
 
-			// Recopie de l'image d'origine avec adaptation de la taille
+			// Copy and resize source image
 			$ok = false;
 			if (function_exists('ImageCopyResampled')){
+				// if transparent GIF, keep the transparency
 				if ($srcExt=="gif"){
-					// Si un GIF est transparent,
-					// fabriquer un PNG transparent
-					$transp = imagecolortransparent($srcImage);
-					if ($transp>0) $destExt = "png";
+					$transparent_index = ImageColorTransparent($srcImage);
+					if($transparent_index!=(-1)){
+						$transparent_color = ImageColorsForIndex($srcImage,$transparent_index);
+						if(!empty($transparent_color)) {
+							$transparent_new = ImageColorAllocate($destImage,$transparent_color['red'],$transparent_color['green'],$transparent_color['blue']);
+							$transparent_new_index = ImageColorTransparent($destImage,$transparent_new);
+							ImageFill($destImage, 0,0, $transparent_new_index);
+						}
+					}
 				}
 				if ($destExt=="png"){
-					// Conserver la transparence
+					// keep transparency
 					if (function_exists("imageAntiAlias")) imageAntiAlias($destImage, true);
 					@imagealphablending($destImage, false);
 					@imagesavealpha($destImage, true);
@@ -1035,10 +1037,7 @@ class AdaptiveImages {
 				);
 				imageconvolution($destImage, $arrMatrix, $intSharpness, 0);
 			}
-			// Sauvegarde de l'image destination
-			$infos['fichier_dest'] = "$destination.$destExt";
-			$infos['format_dest'] = $srcExt = $destExt;
-
+			// save destination image
 			$this->saveGDImage($destImage, $infos, $quality);
 
 			if ($srcImage)
@@ -1110,7 +1109,6 @@ class AdaptiveImages {
 		if (preg_match(",\.(gif|jpe?g|png)($|[?]),i", $source, $regs)) {
 			$extension = strtolower($regs[1]);
 			$extension_dest = $extension;
-			if ($extension == "gif") $extension_dest = "png"; // alpha layer purpose
 		}
 		if (!is_null($outputFormat)) $extension_dest = $outputFormat;
 
@@ -1202,7 +1200,7 @@ class AdaptiveImages {
 		$tmp = $fichier.".tmp";
 		switch($infos['format_dest']){
 			case "gif":
-				$ret = imagepng($img,$tmp);
+				$ret = imagegif($img,$tmp);
 				break;
 			case "png":
 				$ret = imagepng($img,$tmp);
