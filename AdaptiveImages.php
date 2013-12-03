@@ -113,14 +113,17 @@ class AdaptiveImages {
 		if(!property_exists($this,$property) OR $property=="instance") {
       throw new InvalidArgumentException("Property {$property} doesn't exist");
     }
-		if (in_array($property,array("nojsPngGifProgressiveRendering","onDemandImages")) AND !is_bool($value)){
-			throw new InvalidArgumentException("Property {$property} needs a bool value");
+		if (in_array($property,array("nojsPngGifProgressiveRendering","onDemandImages"))){
+			if (!is_bool($value))
+				throw new InvalidArgumentException("Property {$property} needs a bool value");
 		}
-		elseif (in_array($property,array("lowsrcJpgBgColor","destDirectory")) AND !is_string($value)){
-			throw new InvalidArgumentException("Property {$property} needs a string value");
+		elseif (in_array($property,array("lowsrcJpgBgColor","destDirectory"))){
+			if (!is_string($value))
+				throw new InvalidArgumentException("Property {$property} needs a string value");
 		}
-		elseif (in_array($property,array("defaultBkpts","acceptedFormats")) AND !is_array($value)){
-			throw new InvalidArgumentException("Property {$property} needs an array value");
+		elseif (in_array($property,array("defaultBkpts","acceptedFormats"))){
+			if (!is_array($value))
+				throw new InvalidArgumentException("Property {$property} needs an array value");
 		}
 		elseif (!is_int($value)){
 			throw new InvalidArgumentException("Property {$property} needs an int value");
