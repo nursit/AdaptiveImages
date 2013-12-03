@@ -1300,7 +1300,3 @@ class AdaptiveImages {
 	}
 
 }
-
-
-
-?>
