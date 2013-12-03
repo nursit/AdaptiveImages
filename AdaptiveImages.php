@@ -18,69 +18,69 @@ class AdaptiveImages {
 	/**
 	 * @var boolean
 	 */
-	protected $NojsPngGifProgressiveRendering = false;
+	protected $nojsPngGifProgressiveRendering = false;
 
 	/**
 	 * @var string
 	 */
-	protected $LowsrcJpgBgColor = 'ffffff';
+	protected $lowsrcJpgBgColor = '#ffffff';
 
 
 	/**
 	 * @var int
 	 */
-	protected $LowsrcJpgQuality = 10;
+	protected $lowsrcJpgQuality = 10;
 
 	/**
 	 * @var int
 	 */
-	protected $X10JpgQuality = 85;
+	protected $x10JpgQuality = 85;
 
 	/**
 	 * @var int
 	 */
-	protected $X15JpgQuality = 65;
+	protected $x15JpgQuality = 65;
 
 	/**
 	 * @var int
 	 */
-	protected $X20JpgQuality = 45;
+	protected $x20JpgQuality = 45;
 
 	/**
 	 * @var array
 	 */
-	protected $DefaultBkpts = array(160,320,480,640,960,1440);
+	protected $defaultBkpts = array(160,320,480,640,960,1440);
 
 	/**
 	 * @var int
 	 */
-	protected $MaxWidth1x = 640;
+	protected $maxWidth1x = 640;
 
 	/**
 	 * @var int
 	 */
-	protected $MinWidth1x = 320;
+	protected $minWidth1x = 320;
 
 	/**
 	 * @var int
 	 */
-	protected $MaxWidthMobileVersion = 320;
+	protected $maxWidthMobileVersion = 320;
 
 	/**
 	 * @var int
 	 */
-	protected $OnDemandImages = false;
+	protected $onDemandImages = false;
 
 
 	/**
-	 * @var int
+	 * @var array
 	 */
-	protected $AcceptedFormats = array('gif','png','jpeg','jpg');
+	protected $acceptedFormats = array('gif','png','jpeg','jpg');
 
 	/**
-	 * @var int
+	 * @var string
 	 */
-	protected $DirectoryDest = "local/adapt-img/";
+	protected $destDirectory = "local/adapt-img/";
 
 
 	/**
@@ -113,19 +113,19 @@ class AdaptiveImages {
 		if(!property_exists($this,$property) OR $property=="instance") {
       throw new InvalidArgumentException("Property {$property} doesn't exist");
     }
-		if (in_array($property,array("NojsPngGifProgressiveRendering","OnDemandImages")) AND !is_bool($value)){
+		if (in_array($property,array("nojsPngGifProgressiveRendering","onDemandImages")) AND !is_bool($value)){
 			throw new InvalidArgumentException("Property {$property} needs a bool value");
 		}
-		elseif ($property=="LowsrcJpgBgColor" AND !is_string($value)){
+		elseif (in_array($property,array("lowsrcJpgBgColor","destDirectory")) AND !is_string($value)){
 			throw new InvalidArgumentException("Property {$property} needs a string value");
 		}
-		elseif ($property=="DefaultBkpts" AND !is_array($value)){
+		elseif (in_array($property,array("defaultBkpts","acceptedFormats")) AND !is_array($value)){
 			throw new InvalidArgumentException("Property {$property} needs an array value");
 		}
 		elseif (!is_int($value)){
 			throw new InvalidArgumentException("Property {$property} needs an int value");
 		}
-		if ($property=="DefaultBkpts"){
+		if ($property=="defaultBkpts"){
 			sort($value);
 		}
 
@@ -211,7 +211,7 @@ class AdaptiveImages {
 				."if (typeof jQuery!=='undefined') jQuery(function(){jQuery(window).load(adaptImg_onload)}); else addLoadEvent(adaptImg_onload);"
 			  ."})();/*]]>*/</script>\n";
 			// alternative noscript if no js (to de-activate progressive rendering on PNG and GIF)
-			if (!$this->NojsPngGifProgressiveRendering)
+			if (!$this->nojsPngGifProgressiveRendering)
 				$ins .= "<noscript><style type='text/css'>.png img.adapt-img,.gif img.adapt-img{opacity:0.01}span.adapt-img-wrapper.png:after,span.adapt-img-wrapper.gif:after{display:none;}</style></noscript>";
 
 			// collect all adapt-img <style> in order to put it in the <head>
@@ -238,10 +238,10 @@ class AdaptiveImages {
 	public function adaptHTMLPart($html,$maxWidth1x=null){
 		static $bkpts = array();
 		if (!is_null($maxWidth1x))
-			$maxWidth1x = $this->MaxWidth1x;
+			$maxWidth1x = $this->maxWidth1x;
 
 		if ($maxWidth1x AND !isset($bkpts[$maxWidth1x])){
-			$b = $this->$DefaultBkpts;
+			$b = $this->$defaultBkpts;
 			while (count($b) AND end($b)>$maxWidth1x) array_pop($b);
 			// la largeur maxi affichee
 			if (!count($b) OR end($b)<$maxWidth1x) $b[] = $maxWidth1x;
@@ -308,7 +308,7 @@ class AdaptiveImages {
 	 * bkptwidth/resolution/full/path/to/src/image/file
 	 * it allows to reverse-build the image variant from the path
 	 *
-	 * if $force==false and $this->OnDemandImages==true we only compute the file path
+	 * if $force==false and $this->onDemandImages==true we only compute the file path
 	 * and the image variant will be built on first request
 	 *
 	 * @param string $src
@@ -328,12 +328,12 @@ class AdaptiveImages {
 	 * @throws Exception
 	 */
 	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force=false){
-		$dir_dest = $this->DirectoryDest."$wkpt/$x/";
+		$dir_dest = $this->destDirectory."$wkpt/$x/";
 		$dest = $dir_dest.$src;
 		if (($exist=file_exists($dest)) AND filemtime($dest)>=filemtime($src))
 			return $dest;
 
-		$force = ($force?true:!$this->OnDemandImages);
+		$force = ($force?true:!$this->onDemandImages);
 
 		// if file already exists but too old, delete it if we don't want to generate it now
 		// it will be generated on first request
@@ -345,13 +345,13 @@ class AdaptiveImages {
 
 		switch($x){
 			case '10x':
-				$quality = $this->X10JpgQuality;
+				$quality = $this->x10JpgQuality;
 				break;
 			case '15x':
-				$quality = $this->X15JpgQuality;
+				$quality = $this->x15JpgQuality;
 				break;
 			case '20x':
-				$quality = $this->X20JpgQuality;
+				$quality = $this->x20JpgQuality;
 				break;
 		}
 
@@ -365,7 +365,7 @@ class AdaptiveImages {
 
 	/**
 	 * Build an image variant from it's URL
-	 * this function is used when $this->OnDemandImages==true
+	 * this function is used when $this->onDemandImages==true
 	 * needs a RewriteRule such as following and a router to call this function on first request
 	 *
 	 * RewriteRule \badapt-img/(\d+/\d\dx/.*)$ spip.php?action=adapt_img&arg=$1 [QSA,L]
@@ -376,7 +376,7 @@ class AdaptiveImages {
 	 * @throws Exception
 	 */
 	protected function processBkptImageFromPath($URLPath,&$mime){
-		$base = $this->DirectoryDest;
+		$base = $this->destDirectory;
 		$path = $URLPath;
 		// if base path is provided, remove it
 		if (strncmp($path,$base,strlen($base))==0)
@@ -412,7 +412,7 @@ class AdaptiveImages {
 	 * and data-src-mobile attribute if provided
 	 * compute images versions for provided breakpoints
 	 *
-	 * Don't do anything if img width is lower than $this->MinWidth1x
+	 * Don't do anything if img width is lower than $this->minWidth1x
 	 *
 	 * @param string $img
 	 *   html img tag
@@ -430,11 +430,11 @@ class AdaptiveImages {
 		if (strpos($img, "adapt-img")!==false)
 			return $img;
 		if (is_null($bkpt) OR !is_array($bkpt))
-			$bkpt = $this->$DefaultBkpts;
+			$bkpt = $this->$defaultBkpts;
 
 		list($w,$h) = $this->imgSize($img);
 		// Don't do anything if img is to small or unknown width
-		if (!$w OR $w<=$this->MinWidth1x) return $img;
+		if (!$w OR $w<=$this->minWidth1x) return $img;
 
 		$src = trim($this->tagAttribute($img, 'src'));
 		if (strlen($src)<1){
@@ -474,7 +474,7 @@ class AdaptiveImages {
 		$wk = 0;
 		foreach ($bkpt as $wk){
 			if ($wk>$w) break;
-			$is_mobile = (($srcMobile AND $wk<=$this->MaxWidthMobileVersion) ? true : false);
+			$is_mobile = (($srcMobile AND $wk<=$this->maxWidthMobileVersion) ? true : false);
 			foreach ($dpi as $k => $x){
 				$wkx = intval(round($wk*$x));
 				if ($wkx>$w)
@@ -497,20 +497,20 @@ class AdaptiveImages {
 		}
 
 
-		// if $this->OnDemandImages == true image has not been built yet
+		// if $this->onDemandImages == true image has not been built yet
 		// in this case ask for immediate generation
 		if (!file_exists($fallback)){
 			$mime = ""; // not used here
 			$this->processBkptImageFromPath($fallback, $mime);
 		}
 
-		// $this->LowsrcJpgQuality give a base quality for a 450kpx image size
+		// $this->lowsrcJpgQuality give a base quality for a 450kpx image size
 		// quality is varying around this value (+/- 50%) depending of image pixel size
 		// in order to limit the weight of fallback (empirical rule)
-		$q = round($this->LowsrcJpgQuality-((min($maxWidth1x, $wfallback)*$h/$w*min($maxWidth1x, $wfallback))/75000-6));
-		$q = min($q, round($this->LowsrcJpgQuality)*1.5);
-		$q = max($q, round($this->LowsrcJpgQuality)*0.5);
-		$images["fallback"] = $this->img2JPG($fallback, $this->DirectoryDest."fallback/", $this->LowsrcJpgBgColor, $q);
+		$q = round($this->lowsrcJpgQuality-((min($maxWidth1x, $wfallback)*$h/$w*min($maxWidth1x, $wfallback))/75000-6));
+		$q = min($q, round($this->lowsrcJpgQuality)*1.5);
+		$q = max($q, round($this->lowsrcJpgQuality)*0.5);
+		$images["fallback"] = $this->img2JPG($fallback, $this->destDirectory."fallback/", $this->lowsrcJpgBgColor, $q);
 
 		// limit $src image width to $maxWidth1x for old IE
 		$src = $this->processBkptImage($src,$maxWidth1x,$maxWidth1x,'10x',$extension);
@@ -573,7 +573,7 @@ class AdaptiveImages {
 		$wandroid = 0;
 		foreach ($bkptImages as $w=>$files){
 			if ($w==$lastw) {$islast = true;}
-			if ($w<=$this->MaxWidthMobileVersion) $wandroid = $w;
+			if ($w<=$this->maxWidthMobileVersion) $wandroid = $w;
 			// use min-width and max-width in order to avoid override
 			if ($prev_width<$maxWidth1x){
 				$hasmax = (($islast OR $w>=$maxWidth1x)?false:true);
