@@ -5,8 +5,8 @@
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
+ * @source     https://github.com/nursit/AdaptiveImages
  */
-
 
 
 class AdaptiveImages {
@@ -16,68 +16,83 @@ class AdaptiveImages {
 	static protected $instance;
 
 	/**
+	 * Use progressive rendering for PNG and GIF when JS disabled ?
 	 * @var boolean
 	 */
 	protected $nojsPngGifProgressiveRendering = false;
 
 	/**
+	 * Background color for JPG lowsrc generation
+	 * (if source has transparency layer)
 	 * @var string
 	 */
 	protected $lowsrcJpgBgColor = '#ffffff';
 
 
 	/**
+	 * JPG compression quality for JPG lowsrc
 	 * @var int
 	 */
 	protected $lowsrcJpgQuality = 10;
 
 	/**
+	 * JPG compression quality for 1x JPG images
 	 * @var int
 	 */
-	protected $x10JpgQuality = 85;
+	protected $x10JpgQuality = 75;
 
 	/**
+	 * JPG compression quality for 1.5x JPG images
 	 * @var int
 	 */
 	protected $x15JpgQuality = 65;
 
 	/**
+	 * JPG compression quality for 2x JPG images
 	 * @var int
 	 */
 	protected $x20JpgQuality = 45;
 
 	/**
+	 * Breakpoints width for image generation
 	 * @var array
 	 */
 	protected $defaultBkpts = array(160,320,480,640,960,1440);
 
 	/**
+	 * Maximum display width for images
 	 * @var int
 	 */
 	protected $maxWidth1x = 640;
 
 	/**
+	 * Minimum display width for adaptive images (smaller will be unchanged)
 	 * @var int
 	 */
 	protected $minWidth1x = 320;
 
 	/**
+	 * Maximum width for delivering mobile version in data-src-mobile=""
 	 * @var int
 	 */
 	protected $maxWidthMobileVersion = 320;
 
 	/**
+	 * Set to true to generate adapted image only at first request from users
+	 * (speed up initial page generation)
 	 * @var int
 	 */
 	protected $onDemandImages = false;
 
 
 	/**
+	 * Allowed format images to be adapted
 	 * @var array
 	 */
 	protected $acceptedFormats = array('gif','png','jpeg','jpg');
 
 	/**
+	 * directory for storing adaptive images
 	 * @var string
 	 */
 	protected $destDirectory = "local/adapt-img/";
