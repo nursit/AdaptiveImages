@@ -288,7 +288,7 @@ class AdaptiveImages {
 	public function deliverBkptImage($path){
 
 		try {
-			$file = adaptive_images_bkpt_image_from_path($path, $mime);
+			$file = $this->processBkptImageFromPath($path, $mime);
 		}
 		catch (Exception $e){
 			$file = "";
@@ -521,7 +521,7 @@ class AdaptiveImages {
 		$images["fallback"] = $this->img2JPG($fallback, $this->destDirectory."fallback/", $this->lowsrcJpgBgColor, $q);
 
 		// limit $src image width to $maxWidth1x for old IE
-		$src = $this->processBkptImage($src,$maxWidth1x,$maxWidth1x,'10x',$extension);
+		$src = $this->processBkptImage($src,$maxWidth1x,$maxWidth1x,'10x',$extension,true);
 		list($w,$h) = $this->imgSize($src);
 		$img = $this->setTagAttribute($img,"src",$src);
 		$img = $this->setTagAttribute($img,"width",$w);
