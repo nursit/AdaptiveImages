@@ -162,13 +162,15 @@ class AdaptiveImages {
 	 *  - add necessary JS
 	 *
 	 * @param string $html
-	 *  HTML source page
+	 *   HTML source page
+	 * @param int $maxWidth1x
+	 *   max display width for images 1x
 	 * @return string
 	 *  HTML modified page
 	 */
-	public function adaptHTMLPage($html){
+	public function adaptHTMLPage($html,$maxWidth1x=null){
 		// adapt all images that need it, if not already
-		$html = $this->adaptHTMLPart($html);
+		$html = $this->adaptHTMLPart($html, $maxWidth1x);
 
 		// if there is adapted images in the page, add the necessary CSS and JS
 		if (strpos($html,"adapt-img-wrapper")!==false){
@@ -235,16 +237,18 @@ class AdaptiveImages {
 	 * Adapt each <img> from HTML part
 	 *
 	 * @param string $html
-	 * @param null $maxWidth1x
+	 *   HTML source page
+	 * @param int $maxWidth1x
+	 *   max display width for images 1x
 	 * @return string
 	 */
 	public function adaptHTMLPart($html,$maxWidth1x=null){
 		static $bkpts = array();
-		if (!is_null($maxWidth1x))
+		if (is_null($maxWidth1x) OR !intval($maxWidth1x))
 			$maxWidth1x = $this->maxWidth1x;
 
 		if ($maxWidth1x AND !isset($bkpts[$maxWidth1x])){
-			$b = $this->$defaultBkpts;
+			$b = $this->defaultBkpts;
 			while (count($b) AND end($b)>$maxWidth1x) array_pop($b);
 			// la largeur maxi affichee
 			if (!count($b) OR end($b)<$maxWidth1x) $b[] = $maxWidth1x;
@@ -333,6 +337,7 @@ class AdaptiveImages {
 	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force=false){
 		$dir_dest = $this->destDirectory."$wkpt/$x/";
 		$dest = $dir_dest.$src;
+
 		if (($exist=file_exists($dest)) AND filemtime($dest)>=filemtime($src))
 			return $dest;
 
@@ -359,10 +364,10 @@ class AdaptiveImages {
 		}
 
 		$i = $this->imgSharpResize($src,$dir_dest,$wx,10000,$quality);
-		if ($i AND $i!==$dest){
-			throw new Exception("Error in imgSharpResize : return $i but $dest expected");
+		if ($i AND $i!==$dest AND $i!==$src AND $i!==preg_replace(",\.gif$,",".png",$dest)){
+			throw new Exception("Error in imgSharpResize : return \"$i\" whereas \"$dest\" expected");
 		}
-		return file_exists($dest)?$dest:$src;
+		return $i;
 	}
 
 
@@ -433,7 +438,7 @@ class AdaptiveImages {
 		if (strpos($img, "adapt-img")!==false)
 			return $img;
 		if (is_null($bkpt) OR !is_array($bkpt))
-			$bkpt = $this->$defaultBkpts;
+			$bkpt = $this->defaultBkpts;
 
 		list($w,$h) = $this->imgSize($img);
 		// Don't do anything if img is to small or unknown width
@@ -931,6 +936,8 @@ class AdaptiveImages {
 
 	/**
 	 * Resize without bluring, and save image with needed quality if JPG image
+	 * @author : Arno* from http://zone.spip.org/trac/spip-zone/browser/_plugins_/image_responsive/action/image_responsive.php
+	 *
 	 * @param string $source
 	 * @param string $destDir
 	 * @param int $maxWidth
@@ -973,7 +980,7 @@ class AdaptiveImages {
 
 		}
 		else {
-			if (defined('_IMG_GD_MAX_PIXELS') AND $srcWidth*$srcHeight>_IMG_GD_MAX_PIXELS){
+			if (defined('_IMG_GD_MAX_PIXELS') AND _IMG_GD_MAX_PIXELS AND $srcWidth*$srcHeight>_IMG_GD_MAX_PIXELS){
 				spip_log("vignette gd1/gd2 impossible : " . $srcWidth*$srcHeight . "pixels");
 				return $srcFile;
 			}
@@ -984,6 +991,7 @@ class AdaptiveImages {
 			}
 
 			$fonction_imagecreatefrom = $infos['fonction_imagecreatefrom'];
+
 			if (!function_exists($fonction_imagecreatefrom))
 				return $srcFile;
 			$srcImage = @$fonction_imagecreatefrom($srcFile);
@@ -1019,7 +1027,7 @@ class AdaptiveImages {
 				$ok = ImageCopyResized($destImage, $srcImage, 0, 0, 0, 0, $destWidth, $destHeight, $srcWidth, $srcHeight);
 
 			if ($destExt=="jpg" && function_exists('imageconvolution')){
-				$intSharpness = _findSharp($srcWidth, $destWidth);
+				$intSharpness = $this->computeSharpCoeff($srcWidth, $destWidth);
 				$arrMatrix = array(
 					array(-1, -2, -1),
 					array(-2, $intSharpness+12, -2),
@@ -1042,6 +1050,21 @@ class AdaptiveImages {
 
 	}
 
+	/**
+	 * @author : Arno* from http://zone.spip.org/trac/spip-zone/browser/_plugins_/image_responsive/action/image_responsive.php
+	 *
+	 * @param int $intOrig
+	 * @param int $intFinal
+	 * @return mixed
+	 */
+	function computeSharpCoeff($intOrig, $intFinal) {
+	  $intFinal = $intFinal * (750.0 / $intOrig);
+	  $intA     = 52;
+	  $intB     = -0.27810650887573124;
+	  $intC     = .00047337278106508946;
+	  $intRes   = $intA + $intB * $intFinal + $intC * $intFinal * $intFinal;
+	  return max(round($intRes), 0);
+	}
 
 	/**
 	 * Read and preprocess informations about source image
@@ -1062,6 +1085,7 @@ class AdaptiveImages {
 	 */
 	protected function readSourceImage($img, $destDir, $outputFormat = null, $hashfilename = false) {
 		if (strlen($img)==0) return false;
+		$ret = array();
 
 		$source = trim($this->tagAttribute($img, 'src'));
 		if (strlen($source) < 1){
@@ -1086,8 +1110,7 @@ class AdaptiveImages {
 		if (preg_match(",\.(gif|jpe?g|png)($|[?]),i", $source, $regs)) {
 			$extension = strtolower($regs[1]);
 			$extension_dest = $extension;
-
-			if ($extension == "gif") $extension_dest = "png";
+			if ($extension == "gif") $extension_dest = "png"; // alpha layer purpose
 		}
 		if (!is_null($outputFormat)) $extension_dest = $outputFormat;
 
@@ -1106,8 +1129,8 @@ class AdaptiveImages {
 
 
 		// dest filename : md5(source) or full source path name
-		$nom_fichier = $hashfilename?(substr($source, 0, strlen($source) - (strlen($extension) + 1))):md5($source);
-		$fichier_dest = rtrim($destDir,"/") . $nom_fichier . "." . $extension_dest;
+		$nom_fichier = (!$hashfilename?(substr($source, 0, strlen($source) - (strlen($extension) + 1))):md5($source));
+		$fichier_dest = rtrim($destDir,"/") . "/" . $nom_fichier . "." . $extension_dest;
 
 		$creer = true;
 		if (@file_exists($f = $fichier_dest)){
