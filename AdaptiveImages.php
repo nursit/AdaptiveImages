@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.0.1
+ * @version    1.0.2
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -974,8 +974,9 @@ class AdaptiveImages {
 				}
 			}
 			$this->saveGDImage($im_, $infos, $quality);
+			if ($im!==$im_)
+				imagedestroy($im);
 			imagedestroy($im_);
-			imagedestroy($im);
 		}
 		return $infos["fichier_dest"];
 	}
