@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.0.0
+ * @version    1.0.1
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -98,6 +98,12 @@ class AdaptiveImages {
 	 */
 	protected $destDirectory = "local/adapt-img/";
 
+	/**
+	 * Maximum number of px for image that can be loaded in memory by GD
+	 * can be used to avoid Fatal Memory Error on large image if PHP memory limited
+	 * @var string
+	 */
+	protected $maxImagePxGDMemoryLimit = 0;
 
 	/**
 	 * Constructor
@@ -168,6 +174,15 @@ class AdaptiveImages {
 	   self::$instance = new self;
 	 }
 	 return self::$instance;
+	}
+
+	/**
+	 * Log function for internal warning if we can avoid to throw an Exception
+	 * Do nothing, should be overriden with your personal log function
+	 * @param $message
+	 */
+	protected function log($message){
+
 	}
 
 
@@ -874,7 +889,9 @@ class AdaptiveImages {
 	 *   hexa color
 	 * @param int $quality
 	 *   JPG quality
-	 * @return resource
+	 * @return string
+	 *   file name of the resized image (or source image if fail)
+	 * @throws Exception
 	 */
 	function img2JPG($source, $destDir, $bgColor='#000000', $quality=85) {
 		$infos = $this->readSourceImage($source, $destDir, 'jpg', true);
@@ -886,20 +903,33 @@ class AdaptiveImages {
 		$dv= $couleurs["green"];
 		$db= $couleurs["blue"];
 
-		$x_i = $infos["largeur"];
-		$y_i = $infos["hauteur"];
+		$srcWidth = $infos["largeur"];
+		$srcHeight = $infos["hauteur"];
 
 		if ($infos["creer"]) {
-			$im = @$infos["fonction_imagecreatefrom"]($infos["fichier"]);
+			if ($this->maxImagePxGDMemoryLimit AND $srcWidth*$srcHeight>$this->maxImagePxGDMemoryLimit){
+				$this->log("No resize allowed : image is " . $srcWidth*$srcHeight . "px, larger than ".$this->maxImagePxGDMemoryLimit."px");
+				return $infos["fichier"];
+			}
+			$fonction_imagecreatefrom = $infos['fonction_imagecreatefrom'];
+
+			if (!function_exists($fonction_imagecreatefrom))
+				return $infos["fichier"];
+			$im = @$fonction_imagecreatefrom($infos["fichier"]);
+
+			if (!$im){
+				throw new Exception("GD image creation fail for ".$infos["fichier"]);
+			}
+
 			$this->imagepalettetotruecolor($im);
-			$im_ = imagecreatetruecolor($x_i, $y_i);
+			$im_ = imagecreatetruecolor($srcWidth, $srcHeight);
 			if ($infos["format_source"] == "gif" AND function_exists('ImageCopyResampled')) {
 				// if was a transparent GIF
 				// make a tansparent PNG
 				@imagealphablending($im_, false);
 				@imagesavealpha($im_,true);
 				if (function_exists("imageAntiAlias")) imageAntiAlias($im_,true);
-				@ImageCopyResampled($im_, $im, 0, 0, 0, 0, $x_i, $y_i, $x_i, $y_i);
+				@ImageCopyResampled($im_, $im, 0, 0, 0, 0, $srcWidth, $srcHeight, $srcWidth, $srcHeight);
 				imagedestroy($im);
 				$im = $im_;
 			}
@@ -909,8 +939,8 @@ class AdaptiveImages {
 
 			imagefill ($im_, 0, 0, $color_t);
 
-			for ($x = 0; $x < $x_i; $x++) {
-				for ($y=0; $y < $y_i; $y++) {
+			for ($x = 0; $x < $srcWidth; $x++) {
+				for ($y=0; $y < $srcHeight; $y++) {
 
 					$rgb = ImageColorAt($im, $x, $y);
 					$a = ($rgb >> 24) & 0xFF;
@@ -960,6 +990,8 @@ class AdaptiveImages {
 	 * @param int $maxHeight
 	 * @param int|null $quality
 	 * @return string
+	 *   file name of the resized image (or source image if fail)
+	 * @throws Exception
 	 */
 	function imgSharpResize($source, $destDir, $maxWidth = 0, $maxHeight = 0, $quality=null){
 		$infos = $this->readSourceImage($source, $destDir);
@@ -995,14 +1027,13 @@ class AdaptiveImages {
 
 		}
 		else {
-			if (defined('_IMG_GD_MAX_PIXELS') AND _IMG_GD_MAX_PIXELS AND $srcWidth*$srcHeight>_IMG_GD_MAX_PIXELS){
-				spip_log("vignette gd1/gd2 impossible : " . $srcWidth*$srcHeight . "pixels");
+			if ($this->maxImagePxGDMemoryLimit AND $srcWidth*$srcHeight>$this->maxImagePxGDMemoryLimit){
+				$this->log("No resize allowed : image is " . $srcWidth*$srcHeight . "px, larger than ".$this->maxImagePxGDMemoryLimit."px");
 				return $srcFile;
 			}
 			$destExt = $infos['format_dest'];
 			if (!$destExt){
-				spip_log("pas de format pour $srcFile");
-				return $srcFile;
+				throw new Exception("No output extension for {$srcFile}");
 			}
 
 			$fonction_imagecreatefrom = $infos['fonction_imagecreatefrom'];
@@ -1011,8 +1042,7 @@ class AdaptiveImages {
 				return $srcFile;
 			$srcImage = @$fonction_imagecreatefrom($srcFile);
 			if (!$srcImage){
-				spip_log("echec gd1/gd2");
-				return $srcFile;
+				throw new Exception("GD image creation fail for {$srcFile}");
 			}
 
 			// Initialization of dest image
