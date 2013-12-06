@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.0.2
+ * @version    1.1.0
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -12,9 +12,9 @@
 
 class AdaptiveImages {
 	/**
-	 * @var AdaptiveImages
+	 * @var Array
 	 */
-	static protected $instance;
+	static protected $instances = array();
 
 	/**
 	 * Use progressive rendering for PNG and GIF when JS disabled ?
@@ -118,7 +118,7 @@ class AdaptiveImages {
 	 * @throws InvalidArgumentException
 	 */
 	public function __get($property){
-		if(!property_exists($this,$property) OR $property=="instance") {
+		if(!property_exists($this,$property) OR $property=="instances") {
       throw new InvalidArgumentException("Property {$property} doesn't exist");
     }
 		return $this->{$property};
@@ -132,7 +132,7 @@ class AdaptiveImages {
 	 * @throws InvalidArgumentException
 	 */
 	public function __set($property, $value){
-		if(!property_exists($this,$property) OR $property=="instance") {
+		if(!property_exists($this,$property) OR $property=="instances") {
       throw new InvalidArgumentException("Property {$property} doesn't exist");
     }
 		if (in_array($property,array("nojsPngGifProgressiveRendering","onDemandImages"))){
@@ -170,10 +170,11 @@ class AdaptiveImages {
 	 * @return AdaptiveImages
 	 */
 	static public function getInstance() {
-	 if (!(self::$instance instanceof self)) {
-	   self::$instance = new self;
-	 }
-	 return self::$instance;
+		$class_name = get_called_class();
+		if(!array_key_exists($class_name, self::$instances)) {
+      self::$instances[$class_name] = new $class_name();
+    }
+    return self::$instances[$class_name];
 	}
 
 	/**
@@ -183,6 +184,37 @@ class AdaptiveImages {
 	 */
 	protected function log($message){
 
+	}
+
+	/**
+	 * Convert URL path to file system path
+	 * By default just remove existing timestamp
+	 * Should be overriden depending of your URL mapping rules vs DOCUMENT_ROOT
+	 * can also remap Absolute URL of current website to filesystem path
+	 * @param $url
+	 * @return string
+	 */
+	protected function URL2filepath($url){
+		// remove timestamp on URL
+		if (($p=strpos($url,'?'))!==FALSE)
+			$url=substr($url,0,$p);
+
+		return $url;
+	}
+
+	/**
+	 * Convert file system path to URL path
+	 * By default just add timestamp for webperf issue
+	 * Should be overriden depending of your URL mapping rules vs DOCUMENT_ROOT
+	 * can map URL on specific domain (domain sharding for Webperf purpose)
+	 * @param $filepath
+	 * @return string
+	 */
+	protected function filepath2URL($filepath){
+		// be carefull : maybe file doesn't exists yet (On demand generation)
+		if ($t = @filemtime($filepath))
+			$filepath = "$filepath?$t";
+		return $filepath;
 	}
 
 
@@ -493,7 +525,10 @@ class AdaptiveImages {
 				'15x' => $src,
 				'20x' => $src,
 			);
-		$src = preg_replace(',[?][0-9]+$,', '', $src);
+
+		$src = $this->URL2filepath($src);
+		if ($srcMobile)
+			$srcMobile = $this->URL2filepath($srcMobile);
 
 		// don't do anyting if we can't find file
 		if (!file_exists($src))
@@ -554,7 +589,7 @@ class AdaptiveImages {
 		// limit $src image width to $maxWidth1x for old IE
 		$src = $this->processBkptImage($src,$maxWidth1x,$maxWidth1x,'10x',$extension,true);
 		list($w,$h) = $this->imgSize($src);
-		$img = $this->setTagAttribute($img,"src",$src);
+		$img = $this->setTagAttribute($img,"src",$this->filepath2URL($src));
 		$img = $this->setTagAttribute($img,"width",$w);
 		$img = $this->setTagAttribute($img,"height",$h);
 
@@ -633,7 +668,8 @@ class AdaptiveImages {
 				if (isset($mwdpi[$kx])){
 					$mw = $mwdpi[$kx];
 					$not = $htmlsel[$kx];
-					$medias[$mw] = "@media $mw{{$not} span.$cid,{$not} span.$cid:after{background-image:url($file);}}";
+					$url = $this->filepath2URL($file);
+					$medias[$mw] = "@media $mw{{$not} span.$cid,{$not} span.$cid:after{background-image:url($url);}}";
 				}
 			}
 			$prev_width = $w+1;
@@ -643,7 +679,8 @@ class AdaptiveImages {
 		// we chose JPG 320px width - 1.5x as a compromise
 		if ($wandroid){
 			$file = $bkptImages[$wandroid]['15x'];
-			$medias['android2'] = "html.android2 span.$cid,html.android2 span.$cid:after{background-image:url($file);}";
+			$url = $this->filepath2URL($file);
+			$medias['android2'] = "html.android2 span.$cid,html.android2 span.$cid:after{background-image:url($url);}";
 		}
 
 		// Media-Queries
@@ -682,15 +719,15 @@ class AdaptiveImages {
 		else {
 			$srcWidth = $this->tagAttribute($img,'width');
 			$srcHeight = $this->tagAttribute($img,'height');
+			if ($srcWidth AND $srcHeight)
+				return array($srcWidth,$srcHeight);
+			$source = $this->URL2filepath($source);
 		}
 
 		// never process on remote img
 		if (preg_match(';^(\w{3,7}://);', $source)){
 			return array(0,0);
 		}
-		// remove timestamp on URL
-		if (($p=strpos($source,'?'))!==FALSE)
-			$source=substr($source,0,$p);
 
 		if (isset($largeur_img[$source]))
 			$srcWidth = $largeur_img[$source];
@@ -1143,14 +1180,13 @@ class AdaptiveImages {
 		else if (preg_match('@^data:image/(jpe?g|png|gif);base64,(.*)$@isS', $source)) {
 			return false;
 		}
+		else
+			$source = $this->URL2filepath($source);
 
 		// don't process distant images
 		if (preg_match(';^(\w{3,7}://);', $source)){
 			return false;
 		}
-
-		// remove timestamp as query string
-		$source=preg_replace(',[?][0-9]+$,','',$source);
 
 		$extension_dest = "";
 		if (preg_match(",\.(gif|jpe?g|png)($|[?]),i", $source, $regs)) {

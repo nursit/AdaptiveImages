@@ -18,8 +18,8 @@ Call `adaptHTMLPage` method on your HTML page with optional maximum display widt
 
 <pre>
 require_once "AdaptiveImages.php"
-$AdaptiveImage = AdaptiveImages::getInstance();
-$html = $AdaptiveImage->adaptHTMLPage($html,780);
+$AdaptiveImages = AdaptiveImages::getInstance();
+$html = $AdaptiveImages->adaptHTMLPage($html,780);
 </pre>
 
 First view of page with adaptive Images can timeout due to all the images to generate. Reload the page to complete image generation.
@@ -30,15 +30,50 @@ If your CMS/application allow caching of HTML part of pages, apply `adaptHTMLPar
 
 <pre>
 require_once "AdaptiveImages.php"
-$AdaptiveImage = AdaptiveImages::getInstance();
-return $AdaptiveImage->adaptHTMLPart($texte, 780);
+$AdaptiveImages = AdaptiveImages::getInstance();
+return $AdaptiveImages->adaptHTMLPart($texte, 780);
 </pre>
 
 then recall `adaptHTMLPage` method on full HTML page to finish the job
 
 <pre>
-$AdaptiveImage = AdaptiveImages::getInstance();
-$html = $AdaptiveImage->adaptHTMLPage($html,780);
+$AdaptiveImages = AdaptiveImages::getInstance();
+$html = $AdaptiveImages->adaptHTMLPage($html,780);
+</pre>
+
+### URL vs filepath
+
+By default AdaptiveImages considers that relative URLs are also relative file system path.
+If this is not the case in your URL scheme, you can override the 2 methods `URL2filepath` and `filepath2URL` that are used to make transpositions.
+
+In the following example we transpose absolutes URLs to relative file system path and, if defined we add special domain _ADAPTIVE_IMAGES_DOMAIN to file path in the final URL (domain sharding)
+
+<pre>
+class MyAdaptiveImages extends AdaptiveImages {
+	protected function URL2filepath($url){
+		$url = parent::URL2filepath($url);
+		// absolute URL to relative file path
+		if (preg_match(",^https?://,",$url)){
+			$base = url_de_base();
+			if (strncmp($url,$base,strlen($base))==0)
+				$url = _DIR_RACINE . substr($url,strlen($base));
+			elseif (defined('_ADAPTIVE_IMAGES_DOMAIN')
+			  AND strncmp($url,_ADAPTIVE_IMAGES_DOMAIN,strlen(_ADAPTIVE_IMAGES_DOMAIN))==0){
+				$url = _DIR_RACINE . substr($url,strlen(_ADAPTIVE_IMAGES_DOMAIN));
+			}
+		}
+		return $url;
+	}
+
+	protected function filepath2URL($filepath){
+		$filepath = parent::filepath2URL($filepath);
+		if (defined('_ADAPTIVE_IMAGES_DOMAIN')){
+			$filepath = rtrim(_ADAPTIVE_IMAGES_DOMAIN,"/")."/".$filepath;
+		}
+		return $filepath;
+	}
+}
+$AdaptiveImages = MyAdaptiveImages::getInstance();
 </pre>
 
 ### OnDemand images generation
@@ -73,9 +108,9 @@ RewriteRule \badapt-img/(\d+/\d\dx/.*)$ spip.php?action=adapt_img&arg=$1 [QSA,L]
 <pre>
 function action_adapt_img_dist(){
 
-	$AdaptiveImage = AdaptiveImages::getInstance();
+	$AdaptiveImages = AdaptiveImages::getInstance();
 	try {
-		$AdaptiveImage->deliverBkptImage(_request('arg'));
+		$AdaptiveImages->deliverBkptImage(_request('arg'));
 	}
 	catch (Exception $e){
 		http_status(404);
@@ -88,31 +123,31 @@ function action_adapt_img_dist(){
 ## Advanced Configuration
 
 * Directory for storing adaptive images
-  <pre>$AdaptiveImage->destDirectory = "local/adapt-img/";</pre>
+  <pre>$AdaptiveImages->destDirectory = "local/adapt-img/";</pre>
 * Default Maximum display width for images
-  <pre>$AdaptiveImage->maxWidth1x = 640;</pre>
+  <pre>$AdaptiveImages->maxWidth1x = 640;</pre>
 * Minimum display width for adaptive images (smaller will be unchanged)
-  <pre>$AdaptiveImage->minWidth1x = 320;</pre>
+  <pre>$AdaptiveImages->minWidth1x = 320;</pre>
 * Maximum width for delivering mobile version in data-src-mobile=""
-  <pre>$AdaptiveImage->maxWidthMobileVersion = 320;</pre>
+  <pre>$AdaptiveImages->maxWidthMobileVersion = 320;</pre>
 * Activade On-Demand images generation
-  <pre>$AdaptiveImage->onDemandImages = true;</pre>
+  <pre>$AdaptiveImages->onDemandImages = true;</pre>
 * Background color for JPG lowsrc generation (if source has transparency layer)
-  <pre>$AdaptiveImage->lowsrcJpgBgColor = '#eeeeee';</pre>
+  <pre>$AdaptiveImages->lowsrcJpgBgColor = '#eeeeee';</pre>
 * Breakpoints width for image generation
-  <pre>$AdaptiveImage->defaultBkpts = array(160,320,480,640,960,1440);</pre>
+  <pre>$AdaptiveImages->defaultBkpts = array(160,320,480,640,960,1440);</pre>
 * Allow progressive rendering og PNG and GIF even without JS :
-  <pre>$AdaptiveImage->nojsPngGifProgressiveRendering = true;</pre>
+  <pre>$AdaptiveImages->nojsPngGifProgressiveRendering = true;</pre>
 * JPG compression quality for JPG lowsrc
-  <pre>$AdaptiveImage->lowsrcJpgQuality = 10;</pre>
+  <pre>$AdaptiveImages->lowsrcJpgQuality = 10;</pre>
 * JPG compression quality for 1x JPG images
-  <pre>$AdaptiveImage->x10JpgQuality = 75;</pre>
+  <pre>$AdaptiveImages->x10JpgQuality = 75;</pre>
 * JPG compression quality for 1.5x JPG images
-  <pre>$AdaptiveImage->x15JpgQuality = 65;</pre>
+  <pre>$AdaptiveImages->x15JpgQuality = 65;</pre>
 * JPG compression quality for 2x JPG images
-  <pre>$AdaptiveImage->x15JpgQuality = 45;</pre>
+  <pre>$AdaptiveImages->x15JpgQuality = 45;</pre>
 * GD maximum px size (width x height) of image that can be manipulated without Fatal Memory Error (0=no limit)
-  <pre>$AdaptiveImage->maxImagePxGDMemoryLimit = 2000*2000;</pre>
+  <pre>$AdaptiveImages->maxImagePxGDMemoryLimit = 2000*2000;</pre>
 
 
 ## Real-life use case
