@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.1.1
+ * @version    1.1.2
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -427,8 +427,11 @@ class AdaptiveImages {
 		}
 
 		$i = $this->imgSharpResize($src,$dir_dest,$wx,10000,$quality);
-		if ($i AND $i!==$dest AND $i!==$src AND $i!==preg_replace(",\.gif$,",".png",$dest)){
-			throw new Exception("Error in imgSharpResize : return \"$i\" whereas \"$dest\" expected");
+		if ($i AND $i!==$dest AND $i!==$src){
+			throw new Exception("Error in imgSharpResize: return \"$i\" whereas \"$dest\" expected");
+		}
+		if (!file_exists($i)){
+			throw new Exception("Error file \"$i\" not found: check the right to write in ".$this->destDirectory);
 		}
 		return $i;
 	}
@@ -1010,7 +1013,9 @@ class AdaptiveImages {
 					imagesetpixel ($im_, $x, $y, $color);
 				}
 			}
-			$this->saveGDImage($im_, $infos, $quality);
+			if (!$this->saveGDImage($im_, $infos, $quality)){
+				throw new Exception("Unable to write ".$infos['fichier_dest'].", check write right of $destDir");
+			}
 			if ($im!==$im_)
 				imagedestroy($im);
 			imagedestroy($im_);
@@ -1122,7 +1127,9 @@ class AdaptiveImages {
 				imageconvolution($destImage, $arrMatrix, $intSharpness, 0);
 			}
 			// save destination image
-			$this->saveGDImage($destImage, $infos, $quality);
+			if (!$this->saveGDImage($destImage, $infos, $quality)){
+				throw new Exception("Unable to write ".$infos['fichier_dest'].", check write right of $destDir");
+			}
 
 			if ($srcImage)
 				ImageDestroy($srcImage);
