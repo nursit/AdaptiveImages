@@ -46,7 +46,7 @@ $html = $AdaptiveImages->adaptHTMLPage($html,780);
 By default AdaptiveImages considers that relative URLs are also relative file system path.
 If this is not the case in your URL scheme, you can override the 2 methods `URL2filepath` and `filepath2URL` that are used to make transpositions.
 
-In the following example we transpose absolutes URLs to relative file system path and, if defined we add special domain _ADAPTIVE_IMAGES_DOMAIN to file path in the final URL (domain sharding)
+In the following example we transpose absolutes URLs to relative file system path and, if defined we add special domain `_ADAPTIVE_IMAGES_DOMAIN` to file path in the final URL (domain sharding)
 
 <pre>
 class MyAdaptiveImages extends AdaptiveImages {
