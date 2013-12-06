@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.1.0
+ * @version    1.1.1
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -170,7 +170,7 @@ class AdaptiveImages {
 	 * @return AdaptiveImages
 	 */
 	static public function getInstance() {
-		$class_name = get_called_class();
+		$class_name = (function_exists("get_called_class")?get_called_class():"AdaptiveImages");
 		if(!array_key_exists($class_name, self::$instances)) {
       self::$instances[$class_name] = new $class_name();
     }
