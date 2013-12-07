@@ -1205,7 +1205,7 @@ class AdaptiveImages {
 		if (!$extension_dest) return false;
 
 		if (@file_exists($source)){
-			list ($ret["largeur"],$ret["hauteur"]) = $this->imgSize($img);
+			list ($ret["largeur"],$ret["hauteur"]) = $this->imgSize(strpos($img,"width=")!==false?$img:$source);
 			$date_src = @filemtime($source);
 		}
 		else
