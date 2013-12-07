@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.1.3
+ * @version    1.1.4
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -522,6 +522,8 @@ class AdaptiveImages {
 			return $img;
 
 		$src = $this->URL2filepath($src);
+		if (!$src) return $img;
+
 		if ($srcMobile)
 			$srcMobile = $this->URL2filepath($srcMobile);
 
@@ -729,7 +731,7 @@ class AdaptiveImages {
 		}
 
 		// never process on remote img
-		if (preg_match(';^(\w{3,7}://);', $source)){
+		if (!$source OR preg_match(';^(\w{3,7}://);', $source)){
 			return array(0,0);
 		}
 
@@ -1192,7 +1194,7 @@ class AdaptiveImages {
 			$source = $this->URL2filepath($source);
 
 		// don't process distant images
-		if (preg_match(';^(\w{3,7}://);', $source)){
+		if (!$source OR preg_match(';^(\w{3,7}://);', $source)){
 			return false;
 		}
 
