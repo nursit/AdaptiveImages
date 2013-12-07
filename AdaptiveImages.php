@@ -521,6 +521,10 @@ class AdaptiveImages {
 		if (strncmp($src, "data:", 5)==0)
 			return $img;
 
+		$src = $this->URL2filepath($src);
+		if ($srcMobile)
+			$srcMobile = $this->URL2filepath($srcMobile);
+
 		$images = array();
 		if ($w<end($bkpt))
 			$images[$w] = array(
@@ -528,10 +532,6 @@ class AdaptiveImages {
 				'15x' => $src,
 				'20x' => $src,
 			);
-
-		$src = $this->URL2filepath($src);
-		if ($srcMobile)
-			$srcMobile = $this->URL2filepath($srcMobile);
 
 		// don't do anyting if we can't find file
 		if (!file_exists($src))
