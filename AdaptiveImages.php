@@ -648,6 +648,7 @@ class AdaptiveImages {
 		$lastw = array_keys($bkptImages);
 		$lastw = end($lastw);
 		$wandroid = 0;
+		$islast = false;
 		foreach ($bkptImages as $w=>$files){
 			if ($w==$lastw) {$islast = true;}
 			if ($w<=$this->maxWidthMobileVersion) $wandroid = $w;
