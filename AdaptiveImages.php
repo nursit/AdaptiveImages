@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.1.4
+ * @version    1.2.0
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -217,6 +217,36 @@ class AdaptiveImages {
 		return $filepath;
 	}
 
+	/**
+	 * Translate src of original image to URL subpath of adapted image
+	 * the result will makes subdirectory of $destDirectory/320/10x/ and other variants
+	 * the result must allow to retrive src from url in adaptedURLToSrc() methof
+	 * @param string $src
+	 * @return string
+	 */
+	protected function adaptedSrcToURL($src){
+		$url = $this->filepath2URL($src);
+		if (($p=strpos($url,'?'))!==FALSE)
+			$url=substr($url,0,$p);
+		// avoid / starting url : replace / by root/
+		if (strncmp($url,"/",1)==0)
+			$url = "root".$url;
+		return $url;
+	}
+
+	/**
+	 * Translate URL of subpath of adapted image to original image src
+	 * This reverse the adaptedSrcToURL() method
+	 * @param string $url
+	 * @return string
+	 */
+	protected function adaptedURLToSrc($url){
+		// replace root/ by /
+		if (strncmp($url,"root/",5)==0)
+			$url = substr($url,4);
+		$src = $this->URL2filepath($url);
+		return $src;
+	}
 
 	/**
 	 * Process the full HTML page :
@@ -351,6 +381,7 @@ class AdaptiveImages {
 	public function deliverBkptImage($path){
 
 		try {
+			$mime = "";
 			$file = $this->processBkptImageFromPath($path, $mime);
 		}
 		catch (Exception $e){
@@ -399,7 +430,7 @@ class AdaptiveImages {
 	 */
 	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force=false){
 		$dir_dest = $this->destDirectory."$wkpt/$x/";
-		$dest = $dir_dest.$src;
+		$dest = $dir_dest . $this->adaptedSrcToURL($src);
 
 		if (($exist=file_exists($dest)) AND filemtime($dest)>=filemtime($src))
 			return $dest;
@@ -426,7 +457,7 @@ class AdaptiveImages {
 				break;
 		}
 
-		$i = $this->imgSharpResize($src,$dir_dest,$wx,10000,$quality);
+		$i = $this->imgSharpResize($src,$dest,$wx,10000,$quality);
 		if ($i AND $i!==$dest AND $i!==$src){
 			throw new Exception("Error in imgSharpResize: return \"$i\" whereas \"$dest\" expected");
 		}
@@ -459,7 +490,10 @@ class AdaptiveImages {
 		$path = explode("/",$path);
 		$wkpt = intval(array_shift($path));
 		$x = array_shift($path);
-		$src = implode("/",$path);
+		$url = implode("/",$path);
+
+		// translate URL part to file path
+		$src = $this->adaptedURLToSrc($url);
 
 		$parts = pathinfo($src);
 		$extension = strtolower($parts['extension']);
@@ -937,7 +971,7 @@ class AdaptiveImages {
 	 * @throws Exception
 	 */
 	function img2JPG($source, $destDir, $bgColor='#000000', $quality=85) {
-		$infos = $this->readSourceImage($source, $destDir, 'jpg', true);
+		$infos = $this->readSourceImage($source, $destDir, 'jpg');
 
 		if (!$infos) return $source;
 
@@ -1031,7 +1065,7 @@ class AdaptiveImages {
 	 * @author : Arno* from http://zone.spip.org/trac/spip-zone/browser/_plugins_/image_responsive/action/image_responsive.php
 	 *
 	 * @param string $source
-	 * @param string $destDir
+	 * @param string $dest
 	 * @param int $maxWidth
 	 * @param int $maxHeight
 	 * @param int|null $quality
@@ -1039,8 +1073,8 @@ class AdaptiveImages {
 	 *   file name of the resized image (or source image if fail)
 	 * @throws Exception
 	 */
-	function imgSharpResize($source, $destDir, $maxWidth = 0, $maxHeight = 0, $quality=null){
-		$infos = $this->readSourceImage($source, $destDir);
+	function imgSharpResize($source, $dest, $maxWidth = 0, $maxHeight = 0, $quality=null){
+		$infos = $this->readSourceImage($source, $dest);
 		if (!$infos) return $source;
 
 		if ($maxWidth==0 AND $maxHeight==0)
@@ -1131,7 +1165,7 @@ class AdaptiveImages {
 			}
 			// save destination image
 			if (!$this->saveGDImage($destImage, $infos, $quality)){
-				throw new Exception("Unable to write ".$infos['fichier_dest'].", check write right of $destDir");
+				throw new Exception("Unable to write ".$infos['fichier_dest'].", check write right of $dest");
 			}
 
 			if ($srcImage)
@@ -1164,19 +1198,16 @@ class AdaptiveImages {
 	 *
 	 * @param string $img
 	 * 		HTML img tag <img src=... /> OR source filename
-	 * @param string $destDir
+	 * @param string $dest
 	 * 		Destination dir of new image
 	 * @param null|string $outputFormat
 	 * 		forced extension of output image file : jpg, png, gif
-	 * @param bool $hashfilename
-	 *    if true the final file name is a md5 of source file name
-	 *    otherwise final file name keeps the source path and file starting from $destDir
 	 * @return bool|array
 	 * 		false in case of error
 	 *    array of image information otherwise
 	 * @throws Exception
 	 */
-	protected function readSourceImage($img, $destDir, $outputFormat = null, $hashfilename = false) {
+	protected function readSourceImage($img, $dest, $outputFormat = null) {
 		if (strlen($img)==0) return false;
 		$ret = array();
 
@@ -1219,9 +1250,13 @@ class AdaptiveImages {
 			return false;
 
 
-		// dest filename : md5(source) or full source path name
-		$nom_fichier = (!$hashfilename?(substr($source, 0, strlen($source) - (strlen($extension) + 1))):md5($source));
-		$fichier_dest = rtrim($destDir,"/") . "/" . $nom_fichier . "." . $extension_dest;
+		// dest filename : dest/md5(source) or dest if full name provided
+		if (substr($dest,-1)=="/"){
+			$nom_fichier = md5($source);
+			$fichier_dest = $dest . $nom_fichier . "." . $extension_dest;
+		}
+		else
+			$fichier_dest = $dest;
 
 		$creer = true;
 		if (@file_exists($f = $fichier_dest)){
