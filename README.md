@@ -77,6 +77,17 @@ class MyAdaptiveImages extends AdaptiveImages {
 $AdaptiveImages = MyAdaptiveImages::getInstance();
 </pre>
 
+### Markup Hook
+
+If source `<img/>` has some inline styles, it can be needed to add some wrapper and put the style on it on order to keep initial visual result.
+This can be done in overriding the method `imgMarkupHook(&$markup,$originalClass,$originalStyle)`.
+It is call with following arguments
+- partial adaptive markup (only the `<span>` wrapper with the fallback `<img/>` inside)
+- the original class attribute of `<img/>`
+- the original style attribute of `<img/>`
+
+The method must return the partial markup, with your modifications.
+
 ### OnDemand images generation
 
 To avoid timeout on first view of HTML page you can activate OnDemand images generation. In this case, only URL of adapted images will be computed, and you need to use a Rewrite Rules and a router to call `AdaptiveImages::deliverBkptImage`.
