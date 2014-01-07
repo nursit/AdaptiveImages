@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.3.0
+ * @version    1.3.1
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -283,6 +283,14 @@ class AdaptiveImages {
 
 		// if there is adapted images in the page, add the necessary CSS and JS
 		if (strpos($html,"adapt-img-wrapper")!==false){
+			$ins_style = "";
+			// collect all adapt-img <style> in order to put it in the <head>
+			preg_match_all(",<!--\[if !IE\]><!-->.*<style[^>]*>(.*)</style>.*<!--<!\[endif\]-->,Ums",$html,$matches);
+			if (count($matches[1])){
+				$html = str_replace($matches[1],"",$html);
+				$ins_style .= "\n<style>".implode("\n",$matches[1])."\n</style>";
+			}
+
 			// Common styles for all adaptive images during loading
 			$ins = "<style type='text/css'>"."img.adapt-img{opacity:0.70;max-width:100%;height:auto;}"
 			."span.adapt-img-wrapper,span.adapt-img-wrapper:after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;background-size:100% auto;background-repeat:no-repeat;line-height:1px;}"
@@ -291,49 +299,18 @@ class AdaptiveImages {
 			// JS that evaluate connection speed and add a aislow class on <html> if slow connection
 			// and onload JS that adds CSS to finish rendering
 			$async_style = "html img.adapt-img{opacity:0.01}html span.adapt-img-wrapper:after{display:none;}";
-			$length = strlen($html)+2000; // ~2000 pour le JS qu'on va inserer
-			$ins .= "<script type='text/javascript'>/*<![CDATA[*/"
-				."function adaptImgFix(n){var i=window.getComputedStyle(n.parentNode).backgroundImage.replace(/\W?\)$/,'').replace(/^url\(\W?|/,'');n.src=(i&&i!='none'?i:n.src);}"
-				."(function(){function hAC(c){(function(H){H.className=H.className+' '+c})(document.documentElement)}"
-				// Android 2 media-queries bad support workaround
-				// muliple rules = multiples downloads : put .android2 on <html>
-				// use with simple css without media-queries and send compressive image
-				."var android2 = (/android 2[.]/i.test(navigator.userAgent.toLowerCase()));"
-				."if (android2) {hAC('android2');}\n"
-				// slowConnection detection
-				."var slowConnection = false;"
-				."if (typeof window.performance!==\"undefined\"){"
-				."var perfData = window.performance.timing;"
-				."var speed = ~~($length/(perfData.responseEnd - perfData.connectStart));" // approx, *1000/1024 to be exact
-				//."console.log(speed);"
-				."slowConnection = (speed && speed<50);" // speed n'est pas seulement une bande passante car prend en compte la latence de connexion initiale
-				."}else{"
-				//https://github.com/Modernizr/Modernizr/blob/master/feature-detects/network/connection.js
-				."var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;"
-				."if (typeof connection!==\"undefined\") slowConnection = (connection.type == 3 || connection.type == 4 || /^[23]g$/.test(connection.type));"
-				."}"
-				//."console.log(slowConnection);"
-				."if(slowConnection) {hAC('aislow');}\n"
-				// injecter async style async after images are loaded
-			  // in order to hide 2 top layers and show only lower one
-				."var adaptImg_onload = function(){"
-			  ."var sa = document.createElement('style'); sa.type = 'text/css';"
-			  ."sa.innerHTML = '$async_style';"
-			  ."var s = document.getElementsByTagName('style')[0]; s.parentNode.insertBefore(sa, s);};"
-				// http://www.webreference.com/programming/javascript/onloads/index.html
-				."function addLoadEvent(func){var oldol=window.onload;if (typeof oldol != 'function'){window.onload=func;}else{window.onload=function(){if (oldol){oldol();} func();}}}"
-				."if (typeof jQuery!=='undefined') jQuery(function(){jQuery(window).load(adaptImg_onload)}); else addLoadEvent(adaptImg_onload);"
-			  ."})();/*]]>*/</script>\n";
+			$length = strlen($html)+strlen($ins_style)+1750; // ~1750 bytes for CSS and minified JS we add here
+			// minified version of AdaptiveImages.js (using http://closure-compiler.appspot.com/home)
+			$ins .= "<script type='text/javascript'>/*<![CDATA[*/var adaptImgDocLength=$length;adaptImgAsyncStyles=\"$async_style\";".<<<JS
+function adaptImgFix(c){var d=window.getComputedStyle(c.parentNode).backgroundImage.replace(/\W?\)$/,"").replace(/^url\(\W?|/,"");c.src=d&&"none"!=d?d:c.src} (function(){function c(a){var b=document.documentElement;b.className=b.className+" "+a}function d(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}/android 2[.]/i.test(navigator.userAgent.toLowerCase())&&c("android2");var a=!1;if("undefined"!==typeof window.performance)a=window.performance.timing,a=(a=~~(adaptImgDocLength/(a.responseEnd-a.connectStart)))&&50>a;else{var e=navigator.connection||navigator.mozConnection||navigator.webkitConnection;"undefined"!== typeof e&&(a=3==e.type||4==e.type||/^[23]g$/.test(e.type))}a&&c("aislow");var f=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b)};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(f)}):d(f)})();
+JS;
+			$ins .= "/*]]>*/</script>\n";
 			// alternative noscript if no js (to de-activate progressive rendering on PNG and GIF)
 			if (!$this->nojsPngGifProgressiveRendering)
 				$ins .= "<noscript><style type='text/css'>.png img.adapt-img,.gif img.adapt-img{opacity:0.01}span.adapt-img-wrapper.png:after,span.adapt-img-wrapper.gif:after{display:none;}</style></noscript>";
 
-			// collect all adapt-img <style> in order to put it in the <head>
-			preg_match_all(",<!--\[if !IE\]><!-->.*(<style[^>]*>.*</style>).*<!--<!\[endif\]-->,Ums",$html,$matches);
-			if (count($matches[1])){
-				$html = str_replace($matches[1],"",$html);
-				$ins .= implode("\n",$matches[1]);
-			}
+			$ins .= $ins_style;
+
 			// insert before first <script or <link
 			if ($p = strpos($html,"<link") OR $p = strpos($html,"<script") OR $p = strpos($html,"</head"))
 				$html = substr_replace($html,"<!--[if !IE]-->$ins\n<!--[endif]-->\n",$p,0);
