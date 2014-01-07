@@ -42,6 +42,10 @@ function adaptImgFix(n){
 		sa.innerHTML = adaptImgAsyncStyles;
 		var s = document.getElementsByTagName('style')[0];
 		s.parentNode.insertBefore(sa, s);
+		// if no way to fire beforePrint : load now in case of
+		if (!window.matchMedia && !window.onbeforeprint){
+			beforePrint();
+		}
 	};
 
 	// http://www.webreference.com/programming/javascript/onloads/index.html
@@ -62,4 +66,21 @@ function adaptImgFix(n){
 	if (typeof jQuery!=='undefined') jQuery(function (){
 		jQuery(window).load(adaptImg_onload)
 	}); else addLoadEvent(adaptImg_onload);
+
+	// print issue : fix all img
+	var beforePrint = function (){
+		var is = document.getElementsByClassName('adapt-img');
+		for (var i = 0; i<is.length; i++)
+			adaptImgFix(is[i]);
+	};
+	if (window.matchMedia){
+		var mediaQueryList = window.matchMedia('print');
+		mediaQueryList.addListener(function (mql){
+			// do not test mql.matches as we want to get background-images that are possibly not findable in print
+			beforePrint();
+		});
+	}
+	if (typeof(window.onbeforeprint)!=="undefined")
+		window.onbeforeprint = beforePrint;
+
 })();

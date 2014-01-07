@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.3.1
+ * @version    1.4.0
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -295,14 +295,15 @@ class AdaptiveImages {
 			$ins = "<style type='text/css'>"."img.adapt-img{opacity:0.70;max-width:100%;height:auto;}"
 			."span.adapt-img-wrapper,span.adapt-img-wrapper:after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;background-size:100% auto;background-repeat:no-repeat;line-height:1px;}"
 			."span.adapt-img-wrapper:after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
+			."@media print{html span.adapt-img-wrapper{background:none}html span.adapt-img-wrapper img {opacity:1}html span.adapt-img-wrapper:after{display:none}}"
 			."</style>\n";
 			// JS that evaluate connection speed and add a aislow class on <html> if slow connection
 			// and onload JS that adds CSS to finish rendering
 			$async_style = "html img.adapt-img{opacity:0.01}html span.adapt-img-wrapper:after{display:none;}";
-			$length = strlen($html)+strlen($ins_style)+1750; // ~1750 bytes for CSS and minified JS we add here
+			$length = strlen($html)+strlen($ins_style)+2000; // ~2000 bytes for CSS and minified JS we add here
 			// minified version of AdaptiveImages.js (using http://closure-compiler.appspot.com/home)
 			$ins .= "<script type='text/javascript'>/*<![CDATA[*/var adaptImgDocLength=$length;adaptImgAsyncStyles=\"$async_style\";".<<<JS
-function adaptImgFix(c){var d=window.getComputedStyle(c.parentNode).backgroundImage.replace(/\W?\)$/,"").replace(/^url\(\W?|/,"");c.src=d&&"none"!=d?d:c.src} (function(){function c(a){var b=document.documentElement;b.className=b.className+" "+a}function d(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}/android 2[.]/i.test(navigator.userAgent.toLowerCase())&&c("android2");var a=!1;if("undefined"!==typeof window.performance)a=window.performance.timing,a=(a=~~(adaptImgDocLength/(a.responseEnd-a.connectStart)))&&50>a;else{var e=navigator.connection||navigator.mozConnection||navigator.webkitConnection;"undefined"!== typeof e&&(a=3==e.type||4==e.type||/^[23]g$/.test(e.type))}a&&c("aislow");var f=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b)};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(f)}):d(f)})();
+function adaptImgFix(d){var e=window.getComputedStyle(d.parentNode).backgroundImage.replace(/\W?\)$/,"").replace(/^url\(\W?|/,"");d.src=e&&"none"!=e?e:d.src} (function(){function d(a){var b=document.documentElement;b.className=b.className+" "+a}function e(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}/android 2[.]/i.test(navigator.userAgent.toLowerCase())&&d("android2");var c=!1;if("undefined"!==typeof window.performance)c=window.performance.timing,c=(c=~~(adaptImgDocLength/(c.responseEnd-c.connectStart)))&&50>c;else{var f=navigator.connection||navigator.mozConnection||navigator.webkitConnection;"undefined"!== typeof f&&(c=3==f.type||4==f.type||/^[23]g$/.test(f.type))}c&&d("aislow");var h=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b);window.matchMedia||window.onbeforeprint||g()};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(h)}):e(h);var g=function(){for(var a=document.getElementsByClassName("adapt-img"),b=0;b<a.length;b++)adaptImgFix(a[b])};window.matchMedia&& window.matchMedia("print").addListener(function(a){g()});"undefined"!==typeof window.onbeforeprint&&(window.onbeforeprint=g)})();
 JS;
 			$ins .= "/*]]>*/</script>\n";
 			// alternative noscript if no js (to de-activate progressive rendering on PNG and GIF)
