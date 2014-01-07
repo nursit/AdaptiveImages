@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.4.0
+ * @version    1.5.0
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -71,6 +71,12 @@ class AdaptiveImages {
 	 * @var int
 	 */
 	protected $minWidth1x = 320;
+
+	/**
+	 * Minimum filesize for adaptive images (smaller will be unchanged)
+	 * @var int
+	 */
+	protected $minFileSize = 20480; // 20ko
 
 	/**
 	 * Maximum width for delivering mobile version in data-src-mobile=""
@@ -515,6 +521,7 @@ JS;
 	 * compute images versions for provided breakpoints
 	 *
 	 * Don't do anything if img width is lower than $this->minWidth1x
+	 * or img filesize smaller than $this->minFileSize
 	 *
 	 * @param string $img
 	 *   html img tag
@@ -545,12 +552,16 @@ JS;
 		}
 		$srcMobile = $this->tagAttribute($img, 'data-src-mobile');
 
-		// don't do anyting of data-URI images
+		// don't do anything with data-URI images
 		if (strncmp($src, "data:", 5)==0)
 			return $img;
 
 		$src = $this->URL2filepath($src);
 		if (!$src) return $img;
+
+		// Don't do anything if img filesize is to small
+		$filesize=@filesize($src);
+		if ($filesize AND $filesize<$this->minFileSize) return $img;
 
 		if ($srcMobile)
 			$srcMobile = $this->URL2filepath($srcMobile);
