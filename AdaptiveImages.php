@@ -1331,7 +1331,7 @@ JS;
 
 	/**
 	 * SaveAffiche ou sauvegarde une image au format PNG
-	 * Utilise les fonctions sp�cifiques GD.
+	 * Utilise les fonctions specifiques GD.
 	 *
 	 * @param resource $img
 	 *   GD image resource
@@ -1416,7 +1416,7 @@ JS;
 	/**
 	 * Translate hexa color to RGB
 	 * @param string $color
-	 *   hexa color (#000000 � #FFFFFF).
+	 *   hexa color (#000000 to #FFFFFF).
 	 * @return array
 	 */
 	protected function colorHEX2RGB($color) {
