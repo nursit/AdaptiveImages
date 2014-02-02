@@ -1029,6 +1029,11 @@ JS;
 
 			imagefill ($im_, 0, 0, $color_t);
 
+			// JPEG has no transparency layer, no need to copy
+			// the image pixel by pixel
+			if ($infos["format_source"] == "jpg") {
+				$im_ = &$im;
+			} else
 			for ($x = 0; $x < $srcWidth; $x++) {
 				for ($y=0; $y < $srcHeight; $y++) {
 
@@ -1326,7 +1331,7 @@ JS;
 
 	/**
 	 * SaveAffiche ou sauvegarde une image au format PNG
-	 * Utilise les fonctions spécifiques GD.
+	 * Utilise les fonctions specifiques GD.
 	 *
 	 * @param resource $img
 	 *   GD image resource
@@ -1411,7 +1416,7 @@ JS;
 	/**
 	 * Translate hexa color to RGB
 	 * @param string $color
-	 *   hexa color (#000000 à #FFFFFF).
+	 *   hexa color (#000000 to #FFFFFF).
 	 * @return array
 	 */
 	protected function colorHEX2RGB($color) {
