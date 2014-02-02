@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.5.2
+ * @version    1.5.3
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -617,7 +617,9 @@ JS;
 
 		// Build the fallback img : High-compressed JPG
 		// Start from the mobile version if available or from the larger version otherwise
-		if ($wk>$w && $w<$maxWidth1x){
+		if ($wk>$w
+			AND $w<$maxWidth1x
+			AND $w<$this->maxWidthFallbackVersion){
 			$fallback = $images[$w]['10x'];
 			$wfallback = $w;
 		}
