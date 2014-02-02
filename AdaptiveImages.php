@@ -299,13 +299,13 @@ class AdaptiveImages {
 
 			// Common styles for all adaptive images during loading
 			$ins = "<style type='text/css'>"."img.adapt-img{opacity:0.70;max-width:100%;height:auto;}"
-			."span.adapt-img-wrapper,span.adapt-img-wrapper:after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;background-size:100% auto;background-repeat:no-repeat;line-height:1px;}"
-			."span.adapt-img-wrapper:after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
-			."@media print{html span.adapt-img-wrapper{background:none}html span.adapt-img-wrapper img {opacity:1}html span.adapt-img-wrapper:after{display:none}}"
+			.".adapt-img-wrapper,.adapt-img-wrapper:after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;background-size:100% auto;background-repeat:no-repeat;line-height:1px;}"
+			.".adapt-img-wrapper:after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
+			."@media print{html .adapt-img-wrapper{background:none}html .adapt-img-wrapper img {opacity:1}html .adapt-img-wrapper:after{display:none}}"
 			."</style>\n";
 			// JS that evaluate connection speed and add a aislow class on <html> if slow connection
 			// and onload JS that adds CSS to finish rendering
-			$async_style = "html img.adapt-img{opacity:0.01}html span.adapt-img-wrapper:after{display:none;}";
+			$async_style = "html img.adapt-img{opacity:0.01}html .adapt-img-wrapper:after{display:none;}";
 			$length = strlen($html)+strlen($ins_style)+2000; // ~2000 bytes for CSS and minified JS we add here
 			// minified version of AdaptiveImages.js (using http://closure-compiler.appspot.com/home)
 			$ins .= "<script type='text/javascript'>/*<![CDATA[*/var adaptImgDocLength=$length;adaptImgAsyncStyles=\"$async_style\";".<<<JS
@@ -314,7 +314,7 @@ JS;
 			$ins .= "/*]]>*/</script>\n";
 			// alternative noscript if no js (to de-activate progressive rendering on PNG and GIF)
 			if (!$this->nojsPngGifProgressiveRendering)
-				$ins .= "<noscript><style type='text/css'>.png img.adapt-img,.gif img.adapt-img{opacity:0.01}span.adapt-img-wrapper.png:after,span.adapt-img-wrapper.gif:after{display:none;}</style></noscript>";
+				$ins .= "<noscript><style type='text/css'>.png img.adapt-img,.gif img.adapt-img{opacity:0.01} .adapt-img-wrapper.png:after,.adapt-img-wrapper.gif:after{display:none;}</style></noscript>";
 
 			$ins .= $ins_style;
 
@@ -714,7 +714,7 @@ JS;
 					$mw = $mwdpi[$kx];
 					$not = $htmlsel[$kx];
 					$url = $this->filepath2URL($file);
-					$medias[$mw] = "@media $mw{{$not} span.$cid,{$not} span.$cid:after{background-image:url($url);}}";
+					$medias[$mw] = "@media $mw{{$not} .$cid,{$not} .$cid:after{background-image:url($url);}}";
 				}
 			}
 			$prev_width = $w+1;
@@ -725,7 +725,7 @@ JS;
 		if ($wandroid){
 			$file = $bkptImages[$wandroid]['15x'];
 			$url = $this->filepath2URL($file);
-			$medias['android2'] = "html.android2 span.$cid,html.android2 span.$cid:after{background-image:url($url);}";
+			$medias['android2'] = "html.android2 .$cid,html.android2 .$cid:after{background-image:url($url);}";
 		}
 
 		// Media-Queries
