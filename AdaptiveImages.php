@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.5.3
+ * @version    1.6.0
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -219,10 +219,11 @@ class AdaptiveImages {
 	 * By default just add timestamp for webperf issue
 	 * Should be overriden depending of your URL mapping rules vs DOCUMENT_ROOT
 	 * can map URL on specific domain (domain sharding for Webperf purpose)
-	 * @param $filepath
+	 * @param string $filepath
+	 * @param bool $relative
 	 * @return string
 	 */
-	protected function filepath2URL($filepath){
+	protected function filepath2URL($filepath, $relative=false){
 		// be carefull : maybe file doesn't exists yet (On demand generation)
 		if ($t = @filemtime($filepath))
 			$filepath = "$filepath?$t";
@@ -253,7 +254,7 @@ class AdaptiveImages {
 	 * @return string
 	 */
 	protected function adaptedSrcToURL($src){
-		$url = $this->filepath2URL($src);
+		$url = $this->filepath2URL($src, true);
 		if (($p=strpos($url,'?'))!==FALSE)
 			$url=substr($url,0,$p);
 		// avoid / starting url : replace / by root/
