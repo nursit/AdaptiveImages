@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.5.0
+ * @version    1.5.1
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
