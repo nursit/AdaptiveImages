@@ -293,8 +293,9 @@ class AdaptiveImages {
 			// collect all adapt-img <style> in order to put it in the <head>
 			preg_match_all(",<!--\[if !IE\]><!-->.*<style[^>]*>(.*)</style>.*<!--<!\[endif\]-->,Ums",$html,$matches);
 			if (count($matches[1])){
-				$html = str_replace($matches[1],"",$html);
-				$ins_style .= "\n<style>".implode("\n",$matches[1])."\n</style>";
+				$m = array_slice($matches[1], 0, 3);
+				$html = str_replace($m,"",$html);
+				$ins_style .= "\n<style>".implode("\n",$m)."\n</style>";
 			}
 
 			// Common styles for all adaptive images during loading
@@ -1326,7 +1327,7 @@ JS;
 
 	/**
 	 * SaveAffiche ou sauvegarde une image au format PNG
-	 * Utilise les fonctions spécifiques GD.
+	 * Utilise les fonctions spÃ©cifiques GD.
 	 *
 	 * @param resource $img
 	 *   GD image resource
@@ -1411,7 +1412,7 @@ JS;
 	/**
 	 * Translate hexa color to RGB
 	 * @param string $color
-	 *   hexa color (#000000 à #FFFFFF).
+	 *   hexa color (#000000 Ã  #FFFFFF).
 	 * @return array
 	 */
 	protected function colorHEX2RGB($color) {
