@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.6.0
+ * @version    1.6.1
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -287,12 +287,13 @@ class AdaptiveImages {
 	 *   HTML source page
 	 * @param int $maxWidth1x
 	 *   max display width for images 1x
+	 * @param array|null $bkpt
 	 * @return string
 	 *  HTML modified page
 	 */
-	public function adaptHTMLPage($html,$maxWidth1x=null){
+	public function adaptHTMLPage($html,$maxWidth1x=null,$bkpt=null){
 		// adapt all images that need it, if not already
-		$html = $this->adaptHTMLPart($html, $maxWidth1x);
+		$html = $this->adaptHTMLPart($html, $maxWidth1x, $bkpt);
 
 		// if there is adapted images in the page, add the necessary CSS and JS
 		if (strpos($html,"adapt-img-wrapper")!==false){
@@ -340,21 +341,27 @@ JS;
 	 *   HTML source page
 	 * @param int $maxWidth1x
 	 *   max display width for images 1x
+	 * @param array|null $bkpt
 	 * @return string
 	 */
-	public function adaptHTMLPart($html,$maxWidth1x=null){
+	public function adaptHTMLPart($html,$maxWidth1x=null,$bkpt=null){
 		static $bkpts = array();
 		if (is_null($maxWidth1x) OR !intval($maxWidth1x))
 			$maxWidth1x = $this->maxWidth1x;
 
-		if ($maxWidth1x AND !isset($bkpts[$maxWidth1x])){
-			$b = $this->defaultBkpts;
-			while (count($b) AND end($b)>$maxWidth1x) array_pop($b);
-			// la largeur maxi affichee
-			if (!count($b) OR end($b)<$maxWidth1x) $b[] = $maxWidth1x;
-			$bkpts[$maxWidth1x] = $b;
+		if (is_null($bkpt)){
+			if ($maxWidth1x AND !isset($bkpts[$maxWidth1x])){
+				$b = $this->defaultBkpts;
+				while (count($b) AND end($b)>$maxWidth1x) array_pop($b);
+				// la largeur maxi affichee
+				if (!count($b) OR end($b)<$maxWidth1x) $b[] = $maxWidth1x;
+				$bkpts[$maxWidth1x] = $b;
+			}
+			$bkpt = (isset($bkpts[$maxWidth1x])?$bkpts[$maxWidth1x]:null);
 		}
-		$bkpt = (isset($bkpts[$maxWidth1x])?$bkpts[$maxWidth1x]:null);
+		else {
+			while (count($bkpt) AND end($bkpt)>$maxWidth1x) array_pop($bkpt);
+		}
 
 		$replace = array();
 		preg_match_all(",<img\s[^>]*>,Uims",$html,$matches,PREG_SET_ORDER);
