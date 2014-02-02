@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.5.1
+ * @version    1.5.2
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -83,6 +83,12 @@ class AdaptiveImages {
 	 * @var int
 	 */
 	protected $maxWidthMobileVersion = 320;
+
+	/**
+	 * Maximum width for fallback when maxWidth1x is very large
+	 * @var int
+	 */
+	protected $maxWidthFallbackVersion = 640;
 
 	/**
 	 * Set to true to generate adapted image only at first request from users
@@ -601,7 +607,9 @@ JS;
 					$images[$wk][$k] = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wk, $wkx, $k, $extension);
 				}
 			}
-			if ($wk<=$maxWidth1x AND ($is_mobile OR !$srcMobile)){
+			if ($wk<=$maxWidth1x
+				AND ($wk<=$this->maxWidthFallbackVersion)
+				AND ($is_mobile OR !$srcMobile)){
 				$fallback = $images[$wk]['10x'];
 				$wfallback = $wk;
 			}
