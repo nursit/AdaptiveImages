@@ -306,8 +306,9 @@ class AdaptiveImages {
 			}
 
 			// Common styles for all adaptive images during loading
-			$ins = "<style type='text/css'>"."img.adapt-img{opacity:0.70;max-width:100%;height:auto;}"
+			$ins = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{opacity:0.70;max-width:100%;height:auto;}"
 			.".adapt-img-wrapper,.adapt-img-wrapper:after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;background-size:100% auto;background-repeat:no-repeat;line-height:1px;}"
+			."html body .adapt-img-wrapper.lazy,html body .adapt-img-wrapper.lazy:after{background-image:none}"
 			.".adapt-img-wrapper:after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
 			."@media print{html .adapt-img-wrapper{background:none}html .adapt-img-wrapper img {opacity:1}html .adapt-img-wrapper:after{display:none}}"
 			."</style>\n";
@@ -684,8 +685,6 @@ JS;
 		ksort($bkptImages);
 		$cid = "c".crc32(serialize($bkptImages));
 		$style = "";
-		if ($class) $class = " $class";
-		$class = "$cid$class";
 		$img = $this->setTagAttribute($img,"class","adapt-img-ie $class");
 
 		// provided fallback image?
