@@ -2,7 +2,7 @@ AdaptiveImages
 ==============
 
 ## What is it?
-This is the sandalone PHP implementation of "3-layer technique" for Adaptive Images generation.
+This is the standalone PHP implementation of "3-layer technique" for Adaptive Images generation.
 See <http://openweb.eu.org/277> for technical explanations and justifications (french version available : <openweb.eu.org/280>)
 
 ## Requirements
