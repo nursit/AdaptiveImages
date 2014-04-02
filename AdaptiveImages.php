@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.7.0
+ * @version    1.7.1
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -338,7 +338,7 @@ JS;
 
 			// insert before first <script or <link
 			if ($p = strpos($html,"<link") OR $p = strpos($html,"<script") OR $p = strpos($html,"</head"))
-				$html = substr_replace($html,"<!--[if !IE]-->$ins\n<!--[endif]-->\n",$p,0);
+				$html = substr_replace($html,"<!--[if !IE]><!-->$ins\n<!--<![endif]-->\n",$p,0);
 		}
 		return $html;
 	}
