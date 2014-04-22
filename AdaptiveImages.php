@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.7.1
+ * @version    1.7.2
  * @copyright  2013
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -308,10 +308,10 @@ class AdaptiveImages {
 		if (strpos($html,"adapt-img-wrapper")!==false){
 			$ins_style = "";
 			// collect all adapt-img <style> in order to put it in the <head>
-			preg_match_all(",<!--\[if !IE\]><!-->.*<style[^>]*>(.*)</style>.*<!--<!\[endif\]-->,Ums",$html,$matches);
-			if (count($matches[1])){
+			preg_match_all(",<!--\[if !IE\]><!-->.*(<style[^>]*>(.*)</style>).*<!--<!\[endif\]-->,Ums",$html,$matches);
+			if (count($matches[2])){
 				$html = str_replace($matches[1],"",$html);
-				$ins_style .= "\n<style>".implode("\n",$matches[1])."\n</style>";
+				$ins_style .= "\n<style>".implode("\n",$matches[2])."\n</style>";
 			}
 
 			// Common styles for all adaptive images during loading
