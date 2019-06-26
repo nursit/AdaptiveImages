@@ -2,8 +2,8 @@
 /**
  * AdaptiveImages
  *
- * @version    1.7.2
- * @copyright  2013
+ * @version    1.8.0
+ * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
  * @source     https://github.com/nursit/AdaptiveImages
@@ -34,7 +34,7 @@ class AdaptiveImages {
 	 * JPG compression quality for JPG lowsrc
 	 * @var int
 	 */
-	protected $lowsrcJpgQuality = 10;
+	protected $lowsrcJpgQuality = 40;
 
 	/**
 	 * JPG compression quality for 1x JPG images
@@ -88,7 +88,7 @@ class AdaptiveImages {
 	 * Maximum width for fallback when maxWidth1x is very large
 	 * @var int
 	 */
-	protected $maxWidthFallbackVersion = 640;
+	protected $maxWidthFallbackVersion = 160;
 
 	/**
 	 * Set to true to generate adapted image only at first request from users
@@ -315,8 +315,8 @@ class AdaptiveImages {
 			}
 
 			// Common styles for all adaptive images during loading
-			$ins = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{opacity:0.70;max-width:100%;height:auto;}"
-			.".adapt-img-wrapper,.adapt-img-wrapper:after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;background-size:100% auto;background-repeat:no-repeat;line-height:1px;}"
+			$ins = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{opacity:0.70;filter:blur(5px);max-width:100%;height:auto;}"
+			.".adapt-img-wrapper,.adapt-img-wrapper:after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
 			."html body .adapt-img-wrapper.lazy,html.lazy body .adapt-img-wrapper,html body .adapt-img-wrapper.lazy:after,html.lazy body .adapt-img-wrapper:after{background-image:none}"
 			.".adapt-img-wrapper:after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
 			."@media print{html .adapt-img-wrapper{background:none}html .adapt-img-wrapper img {opacity:1}html .adapt-img-wrapper:after{display:none}}"
@@ -448,11 +448,13 @@ JS;
 	 *   extension
 	 * @param bool $force
 	 *   true to force immediate image building if not existing or if too old
+	 * @param int $quality
+	 *   to set an output image quality outside the predefined preset
 	 * @return string
 	 *   name of image file
 	 * @throws Exception
 	 */
-	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force=false){
+	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force=false, $quality=null){
 		$dir_dest = $this->destDirectory."$wkpt/$x/";
 		$dest = $dir_dest . $this->adaptedSrcToURL($src);
 
@@ -469,16 +471,18 @@ JS;
 		if (!$force)
 			return $dest;
 
-		switch($x){
-			case '10x':
-				$quality = $this->x10JpgQuality;
-				break;
-			case '15x':
-				$quality = $this->x15JpgQuality;
-				break;
-			case '20x':
-				$quality = $this->x20JpgQuality;
-				break;
+		if (is_null($quality)){
+			switch ($x) {
+				case '10x':
+					$quality = $this->x10JpgQuality;
+					break;
+				case '15x':
+					$quality = $this->x15JpgQuality;
+					break;
+				case '20x':
+					$quality = $this->x20JpgQuality;
+					break;
+			}
 		}
 
 		$i = $this->imgSharpResize($src,$dest,$wx,10000,$quality);
@@ -642,6 +646,23 @@ JS;
 			$wfallback = $w;
 		}
 
+		$process_fallback = true;
+		// $this->lowsrcJpgQuality give a base quality for a 450kpx image size
+		// quality is varying around this value (+/- 50%) depending of image pixel size
+		// in order to limit the weight of fallback (empirical rule)
+		$w = min($wfallback, $this->maxWidthFallbackVersion);
+		$q = round($this->lowsrcJpgQuality-((min($maxWidth1x, $w)*$h/$w*min($maxWidth1x, $w))/75000-6));
+		$q = min($q, round($this->lowsrcJpgQuality)*1.5);
+		$q = max($q, round($this->lowsrcJpgQuality)*0.5);
+
+		if ($wfallback > $this->maxWidthFallbackVersion) {
+			$fallback = $this->processBkptImage($is_mobile ? $srcMobile : $src, $this->maxWidthFallbackVersion, $this->maxWidthFallbackVersion, '10x', $extension, true, $q);
+			// if it's already a jpg nothing more to do here, otherwise double compress produce artefacts
+			if ($extension === 'jpg') {
+				$process_fallback = false;
+			}
+		}
+
 
 		// if $this->onDemandImages == true image has not been built yet
 		// in this case ask for immediate generation
@@ -650,13 +671,16 @@ JS;
 			$this->processBkptImageFromPath($fallback, $mime);
 		}
 
-		// $this->lowsrcJpgQuality give a base quality for a 450kpx image size
-		// quality is varying around this value (+/- 50%) depending of image pixel size
-		// in order to limit the weight of fallback (empirical rule)
-		$q = round($this->lowsrcJpgQuality-((min($maxWidth1x, $wfallback)*$h/$w*min($maxWidth1x, $wfallback))/75000-6));
-		$q = min($q, round($this->lowsrcJpgQuality)*1.5);
-		$q = max($q, round($this->lowsrcJpgQuality)*0.5);
-		$images["fallback"] = $this->img2JPG($fallback, $this->destDirectory."fallback/", $this->lowsrcJpgBgColor, $q);
+		if ($process_fallback) {
+			$images["fallback"] = $this->img2JPG($fallback, $this->destDirectory."fallback/", $this->lowsrcJpgBgColor, $q);
+		}
+		else {
+			$infos = $this->readSourceImage($fallback, $this->destDirectory."fallback/", 'jpg');
+			//if ($infos['creer']) {
+				@copy($fallback, $infos["fichier_dest"]);
+			//}
+			$images["fallback"] =  $infos["fichier_dest"];
+		}
 
 		// limit $src image width to $maxWidth1x for old IE
 		$src = $this->processBkptImage($src,$maxWidth1x,$maxWidth1x,'10x',$extension,true);
@@ -1379,7 +1403,7 @@ JS;
 				break;
 			case "jpg":
 			case "jpeg":
-				$ret = imagejpeg($img,$tmp,$quality);
+				$ret = imagejpeg($img,$tmp,min($quality,100));
 				break;
 		}
 		if(file_exists($tmp)){

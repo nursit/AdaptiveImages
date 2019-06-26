@@ -150,8 +150,10 @@ function action_adapt_img_dist(){
   <pre>$AdaptiveImages->defaultBkpts = array(160,320,480,640,960,1440);</pre>
 * Allow progressive rendering og PNG and GIF even without JS :
   <pre>$AdaptiveImages->nojsPngGifProgressiveRendering = true;</pre>
+* Max width for the JPG lowsrc fallback image (thumbnail preview)
+  <pre>$AdaptiveImages->maxWidthFallbackVersion = 160;</pre>
 * JPG compression quality for JPG lowsrc
-  <pre>$AdaptiveImages->lowsrcJpgQuality = 10;</pre>
+  <pre>$AdaptiveImages->lowsrcJpgQuality = 40;</pre>
 * JPG compression quality for 1x JPG images
   <pre>$AdaptiveImages->x10JpgQuality = 75;</pre>
 * JPG compression quality for 1.5x JPG images
