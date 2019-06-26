@@ -3,7 +3,7 @@ AdaptiveImages
 
 ## What is it?
 This is the standalone PHP implementation of "3-layer technique" for Adaptive Images generation.
-See <http://openweb.eu.org/277> for technical explanations and justifications (french version available : <openweb.eu.org/280>)
+See <https://openweb.eu.org/277> for technical explanations and justifications (french version available : <openweb.eu.org/280>)
 
 ## Requirements
 
@@ -168,5 +168,5 @@ function action_adapt_img_dist(){
 
 This library is already available through plugins in:
 
-* SPIP CMS <http://contrib.spip.net/Adaptive-Images-4458> [See the implementation](http://zone.spip.org/trac/spip-zone/browser/_plugins_/adaptive_images/trunk/adaptive_images_options.php)
+* SPIP CMS <https://contrib.spip.net/Adaptive-Images-4458> [See the implementation](http://zone.spip.org/trac/spip-zone/browser/_plugins_/adaptive_images/trunk/adaptive_images_options.php)
 * DotClear blog engine <http://plugins.dotaddict.org/dc2/details/adaptiveImages>

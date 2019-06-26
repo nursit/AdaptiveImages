@@ -325,7 +325,7 @@ class AdaptiveImages {
 			// and onload JS that adds CSS to finish rendering
 			$async_style = "html img.adapt-img{opacity:0.01}html .adapt-img-wrapper:after{display:none;}";
 			$length = strlen($html)+strlen($ins_style)+2000; // ~2000 bytes for CSS and minified JS we add here
-			// minified version of AdaptiveImages.js (using http://closure-compiler.appspot.com/home)
+			// minified version of AdaptiveImages.js (using https://closure-compiler.appspot.com/home)
 			$ins .= "<script type='text/javascript'>/*<![CDATA[*/var adaptImgDocLength=$length;adaptImgAsyncStyles=\"$async_style\";adaptImgLazy=".($this->lazyload?"true":"false").";".<<<JS
 function adaptImgFix(d){var e=window.getComputedStyle(d.parentNode).backgroundImage.replace(/\W?\)$/,"").replace(/^url\(\W?|/,"");d.src=e&&"none"!=e?e:d.src}(function(){function d(a){var b=document.documentElement;b.className=b.className+" "+a}function e(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}document.createElement("picture");adaptImgLazy&&d("lazy");/android 2[.]/i.test(navigator.userAgent.toLowerCase())&&d("android2");var c=!1;if("undefined"!==typeof window.performance)c=window.performance.timing,c=(c=~~(adaptImgDocLength/(c.responseEnd-c.connectStart)))&&50>c;else{var f=navigator.connection||navigator.mozConnection||navigator.webkitConnection;"undefined"!==typeof f&&(c=3==f.type||4==f.type||/^[23]g$/.test(f.type))}c&&d("aislow");var h=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b);window.matchMedia||window.onbeforeprint||g()};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(h)}):e(h);var g=function(){for(var a=document.getElementsByClassName("adapt-img"),b=0;b<a.length;b++)adaptImgFix(a[b])};window.matchMedia&&window.matchMedia("print").addListener(function(a){g()});"undefined"!==typeof window.onbeforeprint&&(window.onbeforeprint=g)})();
 JS;
@@ -883,7 +883,7 @@ JS;
 	/**
 	 * Find and get attribute value in an HTML tag
 	 * Regexp from function extraire_attribut() in
-	 * http://core.spip.org/projects/spip/repository/entry/spip/ecrire/inc/filtres.php#L2013
+	 * https://core.spip.net/projects/spip/repository/entry/spip/ecrire/inc/filtres.php#L2013
 	 * @param $tag
 	 *   html tag
 	 * @param $attribute
@@ -989,7 +989,7 @@ JS;
 
 	/**
 	 * Detect animated GIF : don't touch it
-	 * http://it.php.net/manual/en/function.imagecreatefromgif.php#59787
+	 * https://www.php.net/manual/en/function.imagecreatefromgif.php#59787
 	 *
 	 * @param string $filename
 	 * @return bool
@@ -1163,7 +1163,7 @@ JS;
 
 	/**
 	 * Resize without bluring, and save image with needed quality if JPG image
-	 * @author : Arno* from http://zone.spip.org/trac/spip-zone/browser/_plugins_/image_responsive/action/image_responsive.php
+	 * @author : Arno* from https://zone.spip.org/trac/spip-zone/browser/_plugins_/image_responsive/action/image_responsive.php
 	 *
 	 * @param string $source
 	 * @param string $dest
@@ -1279,7 +1279,7 @@ JS;
 	}
 
 	/**
-	 * @author : Arno* from http://zone.spip.org/trac/spip-zone/browser/_plugins_/image_responsive/action/image_responsive.php
+	 * @author : Arno* from http:s//zone.spip.org/trac/spip-zone/browser/_plugins_/image_responsive/action/image_responsive.php
 	 *
 	 * @param int $intOrig
 	 * @param int $intFinal
@@ -1453,7 +1453,7 @@ JS;
 
 	/**
 	 * Convert indexed colors image to true color image
-	 * available in PHP 5.5+ http://www.php.net/manual/fr/function.imagepalettetotruecolor.php
+	 * available in PHP 5.5+ https://www.php.net/manual/fr/function.imagepalettetotruecolor.php
 	 * @param resource $img
 	 * @return bool
 	 */
