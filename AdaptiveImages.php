@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.8.0
+ * @version    1.8.1
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -647,16 +647,29 @@ JS;
 		}
 
 		$process_fallback = true;
-		// $this->lowsrcJpgQuality give a base quality for a 450kpx image size
-		// quality is varying around this value (+/- 50%) depending of image pixel size
-		// in order to limit the weight of fallback (empirical rule)
-		$w = min($wfallback, $this->maxWidthFallbackVersion);
-		$q = round($this->lowsrcJpgQuality-((min($maxWidth1x, $w)*$h/$w*min($maxWidth1x, $w))/75000-6));
-		$q = min($q, round($this->lowsrcJpgQuality)*1.5);
-		$q = max($q, round($this->lowsrcJpgQuality)*0.5);
-
 		if ($wfallback > $this->maxWidthFallbackVersion) {
-			$fallback = $this->processBkptImage($is_mobile ? $srcMobile : $src, $this->maxWidthFallbackVersion, $this->maxWidthFallbackVersion, '10x', $extension, true, $q);
+
+			$bigger_mistake = $h;
+			$best_width = $this->maxWidthFallbackVersion;
+			// optimise this $wfallback to avoid a too big rounding mistake in the height thumbnail resizing
+			foreach ([1,1.25,1.333,1.5,1.666,1.75,2] as $x) {
+				$wfallback = round($x * $this->maxWidthFallbackVersion);
+				list($fw,$fh) = $this->computeImageSize($w, $h, $wfallback,10000);
+				$mistake = abs(($h - ($fh * $w / $fw)) * $maxWidth1x / $w);
+				if ($mistake < $bigger_mistake) {
+					$best_width = $wfallback;
+					$bigger_mistake = $mistake;
+					// if less than 1px of rounding mistake, let's take this size
+					if ($mistake < 1) {
+						break;
+					}
+				}
+			}
+			$wfallback = $best_width;
+
+
+			$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
+			$fallback = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wfallback, $wfallback, '10x', $extension, true, $q);
 			// if it's already a jpg nothing more to do here, otherwise double compress produce artefacts
 			if ($extension === 'jpg') {
 				$process_fallback = false;
@@ -672,6 +685,7 @@ JS;
 		}
 
 		if ($process_fallback) {
+			$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
 			$images["fallback"] = $this->img2JPG($fallback, $this->destDirectory."fallback/", $this->lowsrcJpgBgColor, $q);
 		}
 		else {
@@ -693,6 +707,25 @@ JS;
 		return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x);
 	}
 
+	/**
+	 * Compute an "optimal" jpg quality for the fallback image
+	 * @param $width_fallback
+	 * @param $lowsrcBaseQuality
+	 * @param $width
+	 * @param $height
+	 * @param $maxWidth1x
+	 * @return float|mixed
+	 */
+	function lowsrcQualityOptimize($width_fallback, $lowsrcBaseQuality, $width, $height, $maxWidth1x){
+		// $this->lowsrcJpgQuality give a base quality for a 450kpx image size
+		// quality is varying around this value (+/- 50%) depending of image pixel size
+		// in order to limit the weight of fallback (empirical rule)
+		$q = round($lowsrcBaseQuality-((min($maxWidth1x, $width_fallback)*$height/$width*min($maxWidth1x, $width_fallback))/75000-6));
+		$q = min($q, round($this->lowsrcJpgQuality)*1.5);
+		$q = max($q, round($this->lowsrcJpgQuality)*0.5);
+
+		return $q;
+	}
 
 	/**
 	 * Build html markup with CSS rules in <style> tag
@@ -1369,12 +1402,12 @@ JS;
 			return array($srcWidth,$srcHeight);
 		}
 		else if ($ratioWidth < $ratioHeight) {
-			$destWidth = intval(ceil($srcWidth/$ratioHeight));
+			$destWidth = intval(round($srcWidth/$ratioHeight));
 			$destHeight = $maxHeight;
 		}
 		else {
 			$destWidth = $maxWidth;
-			$destHeight = intval(ceil($srcHeight/$ratioWidth));
+			$destHeight = intval(round($srcHeight/$ratioWidth));
 		}
 		return array ($destWidth, $destHeight);
 	}
