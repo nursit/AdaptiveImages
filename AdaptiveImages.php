@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.8.1
+ * @version    1.9.0
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -327,7 +327,7 @@ class AdaptiveImages {
 			$length = strlen($html)+strlen($ins_style)+2000; // ~2000 bytes for CSS and minified JS we add here
 			// minified version of AdaptiveImages.js (using http://closure-compiler.appspot.com/home)
 			$ins .= "<script type='text/javascript'>/*<![CDATA[*/var adaptImgDocLength=$length;adaptImgAsyncStyles=\"$async_style\";adaptImgLazy=".($this->lazyload?"true":"false").";".<<<JS
-function adaptImgFix(d){var e=window.getComputedStyle(d.parentNode).backgroundImage.replace(/\W?\)$/,"").replace(/^url\(\W?|/,"");d.src=e&&"none"!=e?e:d.src} (function(){function d(a){var b=document.documentElement;b.className=b.className+" "+a}function e(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}adaptImgLazy&&d("lazy");/android 2[.]/i.test(navigator.userAgent.toLowerCase())&&d("android2");var c=!1;if("undefined"!==typeof window.performance)c=window.performance.timing,c=(c=~~(adaptImgDocLength/(c.responseEnd-c.connectStart)))&&50>c;else{var f=navigator.connection||navigator.mozConnection||navigator.webkitConnection; "undefined"!==typeof f&&(c=3==f.type||4==f.type||/^[23]g$/.test(f.type))}c&&d("aislow");var h=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b);window.matchMedia||window.onbeforeprint||g()};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(h)}):e(h);var g=function(){for(var a=document.getElementsByClassName("adapt-img"),b=0;b<a.length;b++)adaptImgFix(a[b])}; window.matchMedia&&window.matchMedia("print").addListener(function(a){g()});"undefined"!==typeof window.onbeforeprint&&(window.onbeforeprint=g)})();
+function adaptImgFix(d){var e=window.getComputedStyle(d.parentNode).backgroundImage.replace(/\W?\)$/,"").replace(/^url\(\W?|/,"");d.src=e&&"none"!=e?e:d.src}(function(){function d(a){var b=document.documentElement;b.className=b.className+" "+a}function e(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}document.createElement("picture");adaptImgLazy&&d("lazy");/android 2[.]/i.test(navigator.userAgent.toLowerCase())&&d("android2");var c=!1;if("undefined"!==typeof window.performance)c=window.performance.timing,c=(c=~~(adaptImgDocLength/(c.responseEnd-c.connectStart)))&&50>c;else{var f=navigator.connection||navigator.mozConnection||navigator.webkitConnection;"undefined"!==typeof f&&(c=3==f.type||4==f.type||/^[23]g$/.test(f.type))}c&&d("aislow");var h=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b);window.matchMedia||window.onbeforeprint||g()};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(h)}):e(h);var g=function(){for(var a=document.getElementsByClassName("adapt-img"),b=0;b<a.length;b++)adaptImgFix(a[b])};window.matchMedia&&window.matchMedia("print").addListener(function(a){g()});"undefined"!==typeof window.onbeforeprint&&(window.onbeforeprint=g)})();
 JS;
 			$ins .= "/*]]>*/</script>\n";
 			// alternative noscript if no js (to de-activate progressive rendering on PNG and GIF)
@@ -824,7 +824,7 @@ JS;
 		// $img = setTagAttribute($img,"onkeydown","adaptImgFix(this)"); // useful ?
 
 		// markup can be adjusted in hook, depending on style and class
-		$markup = "<span class=\"adapt-img-wrapper $cid $extension\">$img</span>";
+		$markup = "<picture class=\"adapt-img-wrapper $cid $extension\">$img</picture>";
 		$markup = $this->imgMarkupHook($markup,$originalClass,$originalStyle);
 
 		$out .= "<!--[if !IE]><!-->$markup\n<style>".$style."</style><!--<![endif]-->";

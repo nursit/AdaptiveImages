@@ -3,6 +3,8 @@ function adaptImgFix(n){
 	n.src = (i && i!='none' ? i : n.src);
 }
 (function (){
+	// picture polyfill for browser not knowing it
+	document.createElement('picture');
 	function htmlAddClass(c){
 		(function (H){
 			H.className = H.className+' '+c
