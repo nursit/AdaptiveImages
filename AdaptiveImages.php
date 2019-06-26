@@ -716,7 +716,7 @@ JS;
 	 * @param $maxWidth1x
 	 * @return float|mixed
 	 */
-	function lowsrcQualityOptimize($width_fallback, $lowsrcBaseQuality, $width, $height, $maxWidth1x){
+	protected function lowsrcQualityOptimize($width_fallback, $lowsrcBaseQuality, $width, $height, $maxWidth1x){
 		// $this->lowsrcJpgQuality give a base quality for a 450kpx image size
 		// quality is varying around this value (+/- 50%) depending of image pixel size
 		// in order to limit the weight of fallback (empirical rule)
@@ -745,7 +745,7 @@ JS;
 	 * @param int $maxWidth1x
 	 * @return string
 	 */
-	function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x){
+	protected function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x){
 		$originalClass = $class = $this->tagAttribute($img,"class");
 		if (strpos($class,"adapt-img")!==false) return $img;
 		ksort($bkptImages);
