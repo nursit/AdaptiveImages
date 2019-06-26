@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.9.0
+ * @version    1.10.0
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -315,30 +315,31 @@ class AdaptiveImages {
 			}
 
 			// Common styles for all adaptive images during loading
-			$ins = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{opacity:0.70;filter:blur(5px);max-width:100%;height:auto;}"
-			.".adapt-img-wrapper,.adapt-img-wrapper:after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
-			."html body .adapt-img-wrapper.lazy,html.lazy body .adapt-img-wrapper,html body .adapt-img-wrapper.lazy:after,html.lazy body .adapt-img-wrapper:after{background-image:none}"
-			.".adapt-img-wrapper:after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
-			."@media print{html .adapt-img-wrapper{background:none}html .adapt-img-wrapper img {opacity:1}html .adapt-img-wrapper:after{display:none}}"
+			$base_style = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{opacity:0.70;filter:blur(5px);max-width:100%;height:auto;}"
+			.".adapt-img-wrapper,.adapt-img-wrapper::after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
+			.".adapt-img-background::after{display:none;width:100%;height:0;}"
+			."html body .adapt-img-wrapper.lazy,html.lazy body .adapt-img-wrapper,html body .adapt-img-wrapper.lazy::after,html.lazy body .adapt-img-wrapper::after{background-image:none}"
+			.".adapt-img-wrapper::after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
+			."@media print{html .adapt-img-wrapper{background:none}html .adapt-img-wrapper img {opacity:1}html .adapt-img-wrapper::after{display:none}}"
 			."</style>\n";
 			// JS that evaluate connection speed and add a aislow class on <html> if slow connection
 			// and onload JS that adds CSS to finish rendering
-			$async_style = "html img.adapt-img{opacity:0.01}html .adapt-img-wrapper:after{display:none;}";
+			$async_style = "html img.adapt-img{opacity:0.01}html .adapt-img-wrapper::after{display:none;}";
 			$length = strlen($html)+strlen($ins_style)+2000; // ~2000 bytes for CSS and minified JS we add here
 			// minified version of AdaptiveImages.js (using https://closure-compiler.appspot.com/home)
-			$ins .= "<script type='text/javascript'>/*<![CDATA[*/var adaptImgDocLength=$length;adaptImgAsyncStyles=\"$async_style\";adaptImgLazy=".($this->lazyload?"true":"false").";".<<<JS
+			$ins = "<script type='text/javascript'>/*<![CDATA[*/var adaptImgDocLength=$length;adaptImgAsyncStyles=\"$async_style\";adaptImgLazy=".($this->lazyload?"true":"false").";".<<<JS
 function adaptImgFix(d){var e=window.getComputedStyle(d.parentNode).backgroundImage.replace(/\W?\)$/,"").replace(/^url\(\W?|/,"");d.src=e&&"none"!=e?e:d.src}(function(){function d(a){var b=document.documentElement;b.className=b.className+" "+a}function e(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}document.createElement("picture");adaptImgLazy&&d("lazy");/android 2[.]/i.test(navigator.userAgent.toLowerCase())&&d("android2");var c=!1;if("undefined"!==typeof window.performance)c=window.performance.timing,c=(c=~~(adaptImgDocLength/(c.responseEnd-c.connectStart)))&&50>c;else{var f=navigator.connection||navigator.mozConnection||navigator.webkitConnection;"undefined"!==typeof f&&(c=3==f.type||4==f.type||/^[23]g$/.test(f.type))}c&&d("aislow");var h=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b);window.matchMedia||window.onbeforeprint||g()};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(h)}):e(h);var g=function(){for(var a=document.getElementsByClassName("adapt-img"),b=0;b<a.length;b++)adaptImgFix(a[b])};window.matchMedia&&window.matchMedia("print").addListener(function(a){g()});"undefined"!==typeof window.onbeforeprint&&(window.onbeforeprint=g)})();
 JS;
 			$ins .= "/*]]>*/</script>\n";
 			// alternative noscript if no js (to de-activate progressive rendering on PNG and GIF)
 			if (!$this->nojsPngGifProgressiveRendering)
-				$ins .= "<noscript><style type='text/css'>.png img.adapt-img,.gif img.adapt-img{opacity:0.01} .adapt-img-wrapper.png:after,.adapt-img-wrapper.gif:after{display:none;}</style></noscript>";
+				$ins .= "<noscript><style type='text/css'>.png img.adapt-img,.gif img.adapt-img{opacity:0.01} .adapt-img-wrapper.png::after,.adapt-img-wrapper.gif::after{display:none;}</style></noscript>";
 
 			$ins .= $ins_style;
 
 			// insert before first <script or <link
 			if ($p = strpos($html,"<link") OR $p = strpos($html,"<script") OR $p = strpos($html,"</head"))
-				$html = substr_replace($html,"<!--[if !IE]><!-->$ins\n<!--<![endif]-->\n",$p,0);
+				$html = substr_replace($html,"$base_style<!--[if !IE]><!-->$ins\n<!--<![endif]-->\n",$p,0);
 		}
 		return $html;
 	}
@@ -351,10 +352,12 @@ JS;
 	 *   HTML source page
 	 * @param int $maxWidth1x
 	 *   max display width for images 1x
+	 * @param bool $asBackground
+	 *   markup with image as a background only
 	 * @param array|null $bkpt
 	 * @return string
 	 */
-	public function adaptHTMLPart($html,$maxWidth1x=null,$bkpt=null){
+	public function adaptHTMLPart($html,$maxWidth1x=null,$bkpt=null,$asBackground=false){
 		static $bkpts = array();
 		if (is_null($maxWidth1x) OR !intval($maxWidth1x))
 			$maxWidth1x = $this->maxWidth1x;
@@ -377,7 +380,7 @@ JS;
 		preg_match_all(",<img\s[^>]*>,Uims",$html,$matches,PREG_SET_ORDER);
 		if (count($matches)){
 			foreach($matches as $m){
-				$ri = $this->processImgTag($m[0], $bkpt, $maxWidth1x);
+				$ri = $this->processImgTag($m[0], $bkpt, $maxWidth1x, $asBackground);
 				if ($ri!==$m[0]){
 					$replace[$m[0]] = $ri;
 				}
@@ -557,10 +560,12 @@ JS;
 	 *   breakpoints
 	 * @param int $maxWidth1x
 	 *   max display with of image (in 1x)
+	 * @param bool $asBackground
+	 *   markup with image as a background only
 	 * @return string
 	 *   html markup : original markup or adapted markup
 	 */
-	protected function processImgTag($img, $bkpt, $maxWidth1x){
+	protected function processImgTag($img, $bkpt, $maxWidth1x, $asBackground = false){
 		if (!$img) return $img;
 
 		// don't do anyting if has adapt-img (already adaptive) or no-adapt-img class (no adaptative needed)
@@ -704,7 +709,7 @@ JS;
 		$img = $this->setTagAttribute($img,"height",$h);
 
 		// ok, now build the markup
-		return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x);
+		return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x, $asBackground);
 	}
 
 	/**
@@ -743,9 +748,10 @@ JS;
 	 * @param int $height
 	 * @param string $extension
 	 * @param int $maxWidth1x
+	 * @param bool $asBackground
 	 * @return string
 	 */
-	protected function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x){
+	protected function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground = false){
 		$originalClass = $class = $this->tagAttribute($img,"class");
 		if (strpos($class,"adapt-img")!==false) return $img;
 		ksort($bkptImages);
@@ -797,7 +803,7 @@ JS;
 					$mw = $mwdpi[$kx];
 					$not = $htmlsel[$kx];
 					$url = $this->filepath2URL($file);
-					$medias[$mw] = "@media $mw{{$not} .$cid,{$not} .$cid:after{background-image:url($url);}}";
+					$medias[$mw] = "@media $mw{{$not} .$cid,{$not} .$cid::after{background-image:url($url);}}";
 				}
 			}
 			$prev_width = $w+1;
@@ -808,26 +814,32 @@ JS;
 		if ($wandroid){
 			$file = $bkptImages[$wandroid]['15x'];
 			$url = $this->filepath2URL($file);
-			$medias['android2'] = "html.android2 .$cid,html.android2 .$cid:after{background-image:url($url);}";
+			$medias['android2'] = "html.android2 .$cid,html.android2 .$cid::after{background-image:url($url);}";
 		}
 
 		// Media-Queries
 		$style .= implode("",$medias);
-
-
 		$originalStyle = $this->tagAttribute($img,"style");
-		$out = "<!--[if IE]>$img<![endif]-->\n";
 
-		$img = $this->setTagAttribute($img,"src",$fallback_file);
-		$img = $this->setTagAttribute($img,"class","adapt-img $class");
-		$img = $this->setTagAttribute($img,"onmousedown","adaptImgFix(this)");
-		// $img = setTagAttribute($img,"onkeydown","adaptImgFix(this)"); // useful ?
+		if ($asBackground) {
+			// if we just want a background image: a span with a class
+			$ratio = round(100 * $height/$width, 2);
+			$out = "<span class=\"adapt-img-wrapper adapt-img-background $cid $extension\" style='padding-bottom: {$ratio}%;'></span>\n<style>".$style."</style>";
+		}
+		else {
+			$out = "<!--[if IE]>$img<![endif]-->\n";
 
-		// markup can be adjusted in hook, depending on style and class
-		$markup = "<picture class=\"adapt-img-wrapper $cid $extension\">$img</picture>";
-		$markup = $this->imgMarkupHook($markup,$originalClass,$originalStyle);
+			$img = $this->setTagAttribute($img,"src",$fallback_file);
+			$img = $this->setTagAttribute($img,"class","adapt-img $class");
+			$img = $this->setTagAttribute($img,"onmousedown","adaptImgFix(this)");
+			// $img = setTagAttribute($img,"onkeydown","adaptImgFix(this)"); // useful ?
 
-		$out .= "<!--[if !IE]><!-->$markup\n<style>".$style."</style><!--<![endif]-->";
+			// markup can be adjusted in hook, depending on style and class
+			$markup = "<picture class=\"adapt-img-wrapper $cid $extension\">$img</picture>";
+			$markup = $this->imgMarkupHook($markup,$originalClass,$originalStyle);
+
+			$out .= "<!--[if !IE]><!-->$markup\n<style>".$style."</style><!--<![endif]-->";
+		}
 
 		return $out;
 	}
