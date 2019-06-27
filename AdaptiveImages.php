@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.10.0
+ * @version    1.11.0
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -125,6 +125,11 @@ class AdaptiveImages {
 	 */
 	protected $lazyload = false;
 
+	/**
+	 * Name of a function to call to generate the thumbnail instead of the internal process
+	 * @var string
+	 */
+	protected $thumbnailGeneratorCallback = null;
 
 	/**
 	 * Constructor
@@ -160,7 +165,7 @@ class AdaptiveImages {
 			if (!is_bool($value))
 				throw new InvalidArgumentException("Property {$property} needs a bool value");
 		}
-		elseif (in_array($property,array("lowsrcJpgBgColor","destDirectory"))){
+		elseif (in_array($property,array("lowsrcJpgBgColor","destDirectory","thumbnailGeneratorCallback"))){
 			if (!is_string($value))
 				throw new InvalidArgumentException("Property {$property} needs a string value");
 		}
@@ -315,7 +320,7 @@ class AdaptiveImages {
 			}
 
 			// Common styles for all adaptive images during loading
-			$base_style = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{opacity:0.70;filter:blur(5px);max-width:100%;height:auto;}"
+			$base_style = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}img.adapt-img.blur{filter:blur(5px)}"
 			.".adapt-img-wrapper,.adapt-img-wrapper::after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
 			.".adapt-img-background::after{display:none;width:100%;height:0;}"
 			."html body .adapt-img-wrapper.lazy,html.lazy body .adapt-img-wrapper,html body .adapt-img-wrapper.lazy::after,html.lazy body .adapt-img-wrapper::after{background-image:none}"
@@ -642,63 +647,86 @@ JS;
 			}
 		}
 
-		// Build the fallback img : High-compressed JPG
-		// Start from the mobile version if available or from the larger version otherwise
-		if ($wk>$w
-			AND $w<$maxWidth1x
-			AND $w<$this->maxWidthFallbackVersion){
-			$fallback = $images[$w]['10x'];
-			$wfallback = $w;
+		$fallback_directory = $this->destDirectory."fallback/";
+		if (!is_null($this->thumbnailGeneratorCallback) && is_callable($this->thumbnailGeneratorCallback)) {
+			$options = [
+				'dir' => $fallback_directory,
+				'images' => $images,
+				'src' => $src,
+				'srcMobile' => $srcMobile,
+				'maxWidthFallbackVersion' => $this->maxWidthFallbackVersion,
+				'lowsrcJpgQuality' => $this->lowsrcJpgQuality,
+			];
+			$callback = $this->thumbnailGeneratorCallback;
+			if ($res = $callback($img, $options)) {
+				list($image, $class) = $res;
+				$images["fallback"] = $image;
+				$images["fallback_class"] = $class;
+			}
 		}
 
-		$process_fallback = true;
-		if ($wfallback > $this->maxWidthFallbackVersion) {
+		// default method for fallback generation if no external callback provided or if it failed
+		if (empty($images["fallback"])) {
 
-			$bigger_mistake = $h;
-			$best_width = $this->maxWidthFallbackVersion;
-			// optimise this $wfallback to avoid a too big rounding mistake in the height thumbnail resizing
-			foreach ([1,1.25,1.333,1.5,1.666,1.75,2] as $x) {
-				$wfallback = round($x * $this->maxWidthFallbackVersion);
-				list($fw,$fh) = $this->computeImageSize($w, $h, $wfallback,10000);
-				$mistake = abs(($h - ($fh * $w / $fw)) * $maxWidth1x / $w);
-				if ($mistake < $bigger_mistake) {
-					$best_width = $wfallback;
-					$bigger_mistake = $mistake;
-					// if less than 1px of rounding mistake, let's take this size
-					if ($mistake < 1) {
-						break;
+			// Build the fallback img : High-compressed JPG
+			// Start from the mobile version if available or from the larger version otherwise
+			if ($wk>$w
+				AND $w<$maxWidth1x
+				AND $w<$this->maxWidthFallbackVersion){
+				$fallback = $images[$w]['10x'];
+				$wfallback = $w;
+			}
+
+			$process_fallback = true;
+			if ($wfallback > $this->maxWidthFallbackVersion) {
+
+				$bigger_mistake = $h;
+				$best_width = $this->maxWidthFallbackVersion;
+				// optimise this $wfallback to avoid a too big rounding mistake in the height thumbnail resizing
+				foreach ([1,1.25,1.333,1.5,1.666,1.75,2] as $x) {
+					$wfallback = round($x * $this->maxWidthFallbackVersion);
+					list($fw,$fh) = $this->computeImageSize($w, $h, $wfallback,10000);
+					$mistake = abs(($h - ($fh * $w / $fw)) * $maxWidth1x / $w);
+					if ($mistake < $bigger_mistake) {
+						$best_width = $wfallback;
+						$bigger_mistake = $mistake;
+						// if less than 1px of rounding mistake, let's take this size
+						if ($mistake < 1) {
+							break;
+						}
 					}
 				}
+				$wfallback = $best_width;
+
+
+				$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
+				$fallback = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wfallback, $wfallback, '10x', $extension, true, $q);
+				// if it's already a jpg nothing more to do here, otherwise double compress produce artefacts
+				if ($extension === 'jpg') {
+					$process_fallback = false;
+				}
 			}
-			$wfallback = $best_width;
 
 
-			$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
-			$fallback = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wfallback, $wfallback, '10x', $extension, true, $q);
-			// if it's already a jpg nothing more to do here, otherwise double compress produce artefacts
-			if ($extension === 'jpg') {
-				$process_fallback = false;
+			// if $this->onDemandImages == true image has not been built yet
+			// in this case ask for immediate generation
+			if (!file_exists($fallback)){
+				$mime = ""; // not used here
+				$this->processBkptImageFromPath($fallback, $mime);
 			}
-		}
 
-
-		// if $this->onDemandImages == true image has not been built yet
-		// in this case ask for immediate generation
-		if (!file_exists($fallback)){
-			$mime = ""; // not used here
-			$this->processBkptImageFromPath($fallback, $mime);
-		}
-
-		if ($process_fallback) {
-			$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
-			$images["fallback"] = $this->img2JPG($fallback, $this->destDirectory."fallback/", $this->lowsrcJpgBgColor, $q);
-		}
-		else {
-			$infos = $this->readSourceImage($fallback, $this->destDirectory."fallback/", 'jpg');
-			//if ($infos['creer']) {
-				@copy($fallback, $infos["fichier_dest"]);
-			//}
-			$images["fallback"] =  $infos["fichier_dest"];
+			if ($process_fallback) {
+				$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
+				$images["fallback"] = $this->img2JPG($fallback, $fallback_directory, $this->lowsrcJpgBgColor, $q);
+			}
+			else {
+				$infos = $this->readSourceImage($fallback, $fallback_directory, 'jpg');
+				//if ($infos['creer']) {
+					@copy($fallback, $infos["fichier_dest"]);
+				//}
+				$images["fallback"] =  $infos["fichier_dest"];
+			}
+			$images["fallback_class"] = 'blur';
 		}
 
 		// limit $src image width to $maxWidth1x for old IE
@@ -761,10 +789,17 @@ JS;
 
 		// provided fallback image?
 		$fallback_file = "";
+		$fallback_class = "";
 		if (isset($bkptImages['fallback'])){
 			$fallback_file = $bkptImages['fallback'];
 			unset($bkptImages['fallback']);
 		}
+		if (isset($bkptImages['fallback_class'])){
+			$fallback_class = $bkptImages['fallback_class'];
+			$class = trim("$fallback_class $class");
+			unset($bkptImages['fallback_class']);
+		}
+
 		// else we use the smallest one
 		if (!$fallback_file){
 			$fallback_file = reset($bkptImages);
@@ -830,7 +865,7 @@ JS;
 			$out = "<!--[if IE]>$img<![endif]-->\n";
 
 			$img = $this->setTagAttribute($img,"src",$fallback_file);
-			$img = $this->setTagAttribute($img,"class","adapt-img $class");
+			$img = $this->setTagAttribute($img,"class",trim("adapt-img $class"));
 			$img = $this->setTagAttribute($img,"onmousedown","adaptImgFix(this)");
 			// $img = setTagAttribute($img,"onkeydown","adaptImgFix(this)"); // useful ?
 
@@ -993,6 +1028,7 @@ JS;
 			'jpeg' => 'image/jpeg',
 			'png' => 'image/png',
 			'gif' => 'image/gif',
+			'svg' => 'image/svg+xml',
 		);
 
 		return (isset($MimeTable[$extension])?$MimeTable[$extension]:'image/jpeg');
