@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.11.1
+ * @version    1.11.2
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -85,10 +85,10 @@ class AdaptiveImages {
 	protected $maxWidthMobileVersion = 320;
 
 	/**
-	 * Maximum width for fallback when maxWidth1x is very large
+	 * target width for fallback thumbnail
 	 * @var int
 	 */
-	protected $maxWidthFallbackVersion = 160;
+	protected $lowsrcWidth = 160;
 
 	/**
 	 * Set to true to generate adapted image only at first request from users
@@ -640,7 +640,7 @@ JS;
 				}
 			}
 			if ($wk<=$maxWidth1x
-				AND ($wk<=$this->maxWidthFallbackVersion)
+				AND ($wk<=$this->lowsrcWidth)
 				AND ($is_mobile OR !$srcMobile)){
 				$fallback = $images[$wk]['10x'];
 				$wfallback = $wk;
@@ -654,7 +654,7 @@ JS;
 				'images' => $images,
 				'src' => $src,
 				'srcMobile' => $srcMobile,
-				'maxWidthFallbackVersion' => $this->maxWidthFallbackVersion,
+				'lowsrcWidth' => $this->lowsrcWidth,
 				'lowsrcJpgQuality' => $this->lowsrcJpgQuality,
 			];
 			$callback = $this->thumbnailGeneratorCallback;
@@ -672,19 +672,19 @@ JS;
 			// Start from the mobile version if available or from the larger version otherwise
 			if ($wk>$w
 				AND $w<$maxWidth1x
-				AND $w<$this->maxWidthFallbackVersion){
+				AND $w<$this->lowsrcWidth){
 				$fallback = $images[$w]['10x'];
 				$wfallback = $w;
 			}
 
 			$process_fallback = true;
-			if ($wfallback > $this->maxWidthFallbackVersion) {
+			if ($wfallback > $this->lowsrcWidth) {
 
 				$bigger_mistake = $h;
-				$best_width = $this->maxWidthFallbackVersion;
+				$best_width = $this->lowsrcWidth;
 				// optimise this $wfallback to avoid a too big rounding mistake in the height thumbnail resizing
 				foreach ([1,1.25,1.333,1.5,1.666,1.75,2] as $x) {
-					$wfallback = round($x * $this->maxWidthFallbackVersion);
+					$wfallback = round($x * $this->lowsrcWidth);
 					list($fw,$fh) = $this->computeImageSize($w, $h, $wfallback,10000);
 					$mistake = abs(($h - ($fh * $w / $fw)) * $maxWidth1x / $w);
 					if ($mistake < $bigger_mistake) {
