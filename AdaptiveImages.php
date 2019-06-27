@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.11.2
+ * @version    1.11.3
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -647,86 +647,89 @@ JS;
 			}
 		}
 
-		$fallback_directory = $this->destDirectory."fallback/";
-		if (!is_null($this->thumbnailGeneratorCallback) && is_callable($this->thumbnailGeneratorCallback)) {
-			$options = [
-				'dir' => $fallback_directory,
-				'images' => $images,
-				'src' => $src,
-				'srcMobile' => $srcMobile,
-				'lowsrcWidth' => $this->lowsrcWidth,
-				'lowsrcJpgQuality' => $this->lowsrcJpgQuality,
-			];
-			$callback = $this->thumbnailGeneratorCallback;
-			if ($res = $callback($img, $options)) {
-				list($image, $class) = $res;
-				$images["fallback"] = $image;
-				$images["fallback_class"] = $class;
-			}
-		}
+		if (!$asBackground) {
 
-		// default method for fallback generation if no external callback provided or if it failed
-		if (empty($images["fallback"])) {
-
-			// Build the fallback img : High-compressed JPG
-			// Start from the mobile version if available or from the larger version otherwise
-			if ($wk>$w
-				AND $w<$maxWidth1x
-				AND $w<$this->lowsrcWidth){
-				$fallback = $images[$w]['10x'];
-				$wfallback = $w;
+			$fallback_directory = $this->destDirectory."fallback/";
+			if (!is_null($this->thumbnailGeneratorCallback) && is_callable($this->thumbnailGeneratorCallback)) {
+				$options = [
+					'dir' => $fallback_directory,
+					'images' => $images,
+					'src' => $src,
+					'srcMobile' => $srcMobile,
+					'lowsrcWidth' => $this->lowsrcWidth,
+					'lowsrcJpgQuality' => $this->lowsrcJpgQuality,
+				];
+				$callback = $this->thumbnailGeneratorCallback;
+				if ($res = $callback($img, $options)) {
+					list($image, $class) = $res;
+					$images["fallback"] = $image;
+					$images["fallback_class"] = $class;
+				}
 			}
 
-			$process_fallback = true;
-			if ($wfallback > $this->lowsrcWidth) {
+			// default method for fallback generation if no external callback provided or if it failed
+			if (empty($images["fallback"])) {
 
-				$bigger_mistake = $h;
-				$best_width = $this->lowsrcWidth;
-				// optimise this $wfallback to avoid a too big rounding mistake in the height thumbnail resizing
-				foreach ([1,1.25,1.333,1.5,1.666,1.75,2] as $x) {
-					$wfallback = round($x * $this->lowsrcWidth);
-					list($fw,$fh) = $this->computeImageSize($w, $h, $wfallback,10000);
-					$mistake = abs(($h - ($fh * $w / $fw)) * $maxWidth1x / $w);
-					if ($mistake < $bigger_mistake) {
-						$best_width = $wfallback;
-						$bigger_mistake = $mistake;
-						// if less than 1px of rounding mistake, let's take this size
-						if ($mistake < 1) {
-							break;
+				// Build the fallback img : High-compressed JPG
+				// Start from the mobile version if available or from the larger version otherwise
+				if ($wk>$w
+					AND $w<$maxWidth1x
+					AND $w<$this->lowsrcWidth){
+					$fallback = $images[$w]['10x'];
+					$wfallback = $w;
+				}
+
+				$process_fallback = true;
+				if ($wfallback > $this->lowsrcWidth) {
+
+					$bigger_mistake = $h;
+					$best_width = $this->lowsrcWidth;
+					// optimise this $wfallback to avoid a too big rounding mistake in the height thumbnail resizing
+					foreach ([1,1.25,1.333,1.5,1.666,1.75,2] as $x) {
+						$wfallback = round($x * $this->lowsrcWidth);
+						list($fw,$fh) = $this->computeImageSize($w, $h, $wfallback,10000);
+						$mistake = abs(($h - ($fh * $w / $fw)) * $maxWidth1x / $w);
+						if ($mistake < $bigger_mistake) {
+							$best_width = $wfallback;
+							$bigger_mistake = $mistake;
+							// if less than 1px of rounding mistake, let's take this size
+							if ($mistake < 1) {
+								break;
+							}
 						}
 					}
+					$wfallback = $best_width;
+
+
+					$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
+					$fallback = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wfallback, $wfallback, '10x', $extension, true, $q);
+					// if it's already a jpg nothing more to do here, otherwise double compress produce artefacts
+					if ($extension === 'jpg') {
+						$process_fallback = false;
+					}
 				}
-				$wfallback = $best_width;
 
 
-				$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
-				$fallback = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wfallback, $wfallback, '10x', $extension, true, $q);
-				// if it's already a jpg nothing more to do here, otherwise double compress produce artefacts
-				if ($extension === 'jpg') {
-					$process_fallback = false;
+				// if $this->onDemandImages == true image has not been built yet
+				// in this case ask for immediate generation
+				if (!file_exists($fallback)){
+					$mime = ""; // not used here
+					$this->processBkptImageFromPath($fallback, $mime);
 				}
-			}
 
-
-			// if $this->onDemandImages == true image has not been built yet
-			// in this case ask for immediate generation
-			if (!file_exists($fallback)){
-				$mime = ""; // not used here
-				$this->processBkptImageFromPath($fallback, $mime);
-			}
-
-			if ($process_fallback) {
-				$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
-				$images["fallback"] = $this->img2JPG($fallback, $fallback_directory, $this->lowsrcJpgBgColor, $q);
-			}
-			else {
-				$infos = $this->readSourceImage($fallback, $fallback_directory, 'jpg');
-				if ($infos['creer']) {
-					@copy($fallback, $infos["fichier_dest"]);
+				if ($process_fallback) {
+					$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
+					$images["fallback"] = $this->img2JPG($fallback, $fallback_directory, $this->lowsrcJpgBgColor, $q);
 				}
-				$images["fallback"] =  $infos["fichier_dest"];
+				else {
+					$infos = $this->readSourceImage($fallback, $fallback_directory, 'jpg');
+					if ($infos['creer']) {
+						@copy($fallback, $infos["fichier_dest"]);
+					}
+					$images["fallback"] =  $infos["fichier_dest"];
+				}
+				$images["fallback_class"] = 'blur';
 			}
-			$images["fallback_class"] = 'blur';
 		}
 
 		// limit $src image width to $maxWidth1x for old IE
