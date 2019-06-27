@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.11.0
+ * @version    1.11.1
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -721,9 +721,9 @@ JS;
 			}
 			else {
 				$infos = $this->readSourceImage($fallback, $fallback_directory, 'jpg');
-				//if ($infos['creer']) {
+				if ($infos['creer']) {
 					@copy($fallback, $infos["fichier_dest"]);
-				//}
+				}
 				$images["fallback"] =  $infos["fichier_dest"];
 			}
 			$images["fallback_class"] = 'blur';
