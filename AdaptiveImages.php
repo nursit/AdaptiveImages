@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.11.3
+ * @version    1.11.4
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -810,6 +810,13 @@ JS;
 		}
 		// embed fallback as a DATA URI if not more than 32ko
 		$fallback_file = $this->base64EmbedFile($fallback_file);
+		// if it is not a vectorial image, encapsulate it in a svg to avoid the pixel rounding flickering
+		if (strpos($fallback_file, "image/svg") === false) {
+			$svg_wrapper = <<<SVG
+<svg viewBox="0 0 $width $height" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><image width="$width" height="$height" xlink:href="$fallback_file" preserveAspectRatio="none"/></svg>
+SVG;
+			$fallback_file = 'data:'.$this->extensionToMimeType('svg').';base64,'.base64_encode($svg_wrapper);
+		}
 
 		$prev_width = 0;
 		$medias = array();
