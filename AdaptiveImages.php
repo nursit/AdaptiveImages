@@ -580,26 +580,59 @@ JS;
 			$bkpt = $this->defaultBkpts;
 
 		list($w,$h) = $this->imgSize($img);
-		// Don't do anything if img is to small or unknown width
-		if (!$w OR $w<=$this->minWidth1x) return $img;
-
 		$src = trim($this->tagAttribute($img, 'src'));
 		if (strlen($src)<1){
 			$src = $img;
 			$img = "<img src='".$src."' />";
 		}
-		$srcMobile = $this->tagAttribute($img, 'data-src-mobile');
 
-		// don't do anything with data-URI images
-		if (strncmp($src, "data:", 5)==0)
-			return $img;
+		$adapt = true;
+		// Don't do anything if img is to small or unknown width
+		if (!$w OR $w<=$this->minWidth1x) {
+			$adapt = false;
+		}
+		else {
+			$srcMobile = $this->tagAttribute($img, 'data-src-mobile');
 
-		$src = $this->URL2filepath($src);
-		if (!$src) return $img;
+			// don't do anything with data-URI images
+			if (strncmp($src, "data:", 5)==0) {
+				$adapt = false;
+			}
+			else {
+				$src = $this->URL2filepath($src);
+				// don't do anyting if we can't find file
+				if (!$src or !file_exists($src)) {
+					$adapt = false;
+				}
+				else {
+					// Don't do anything if img filesize is to small
+					$filesize=@filesize($src);
+					if ($filesize AND $filesize<$this->minFileSize) {
+						$adapt = false;
+					}
+					else {
+						$parts = pathinfo($src);
+						$extension = $parts['extension'];
+						// don't do anyting if it's an animated GIF
+						if ($extension=="gif" AND $this->isAnimatedGif($src)) {
+							$adapt = false;
+						}
+					}
+				}
+			}
+		}
 
-		// Don't do anything if img filesize is to small
-		$filesize=@filesize($src);
-		if ($filesize AND $filesize<$this->minFileSize) return $img;
+		if (!$adapt) {
+			if (!$asBackground) {
+				return $img;
+			}
+
+			$images[$w] = array(
+				'10x' => $src,
+			);
+			// build the markup for background
+			return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x, $asBackground);
+		}
 
 		if ($srcMobile)
 			$srcMobile = $this->URL2filepath($srcMobile);
@@ -611,17 +644,6 @@ JS;
 				'15x' => $src,
 				'20x' => $src,
 			);
-
-		// don't do anyting if we can't find file
-		if (!file_exists($src))
-			return $img;
-
-		$parts = pathinfo($src);
-		$extension = $parts['extension'];
-
-		// don't do anyting if it's an animated GIF
-		if ($extension=="gif" AND $this->isAnimatedGif($src))
-			return $img;
 
 		// build images (or at least URLs of images) on breakpoints
 		$fallback = $src;
@@ -857,7 +879,7 @@ SVG;
 		// One single CSS rule for old android browser (<3) which isn't able to manage override properly
 		// we chose JPG 320px width - 1.5x as a compromise
 		if ($wandroid){
-			$file = $bkptImages[$wandroid]['15x'];
+			$file = (isset($bkptImages[$wandroid]['15x']) ? $bkptImages[$wandroid]['15x'] : $bkptImages[$wandroid]['10x']);
 			$url = $this->filepath2URL($file);
 			$medias['android2'] = "html.android2 .$cid,html.android2 .$cid::after{background-image:url($url);}";
 		}
