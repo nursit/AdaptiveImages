@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.11.4
+ * @version    1.11.5
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -322,7 +322,7 @@ class AdaptiveImages {
 			// Common styles for all adaptive images during loading
 			$base_style = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}img.adapt-img.blur{filter:blur(5px)}"
 			.".adapt-img-wrapper,.adapt-img-wrapper::after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
-			.".adapt-img-background::after{display:none;width:100%;height:0;}"
+			.".adapt-img-background{width:100%;height:0}.adapt-img-background::after{display:none;width:100%;height:0;}"
 			."html body .adapt-img-wrapper.lazy,html.lazy body .adapt-img-wrapper,html body .adapt-img-wrapper.lazy::after,html.lazy body .adapt-img-wrapper::after{background-image:none}"
 			.".adapt-img-wrapper::after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
 			."@media print{html .adapt-img-wrapper{background:none}html .adapt-img-wrapper img {opacity:1}html .adapt-img-wrapper::after{display:none}}"
