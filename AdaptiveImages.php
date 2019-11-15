@@ -171,7 +171,7 @@ class AdaptiveImages {
 			if (!is_bool($value))
 				throw new InvalidArgumentException("Property {$property} needs a bool value");
 		}
-		elseif (in_array($property,array("lowsrcJpgBgColor","destDirectory","thumbnailGeneratorCallback"))){
+		elseif (in_array($property,array("lowsrcJpgBgColor","destDirectory","thumbnailGeneratorCallback","markupMethod"))){
 			if (!is_string($value))
 				throw new InvalidArgumentException("Property {$property} needs a string value");
 		}
@@ -326,26 +326,51 @@ class AdaptiveImages {
 			}
 
 			// Common styles for all adaptive images during loading
-			$base_style = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}img.adapt-img.blur{filter:blur(5px)}"
-			.".adapt-img-wrapper,.adapt-img-wrapper::after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
-			.".adapt-img-background{width:100%;height:0}.adapt-img-background::after{display:none;width:100%;height:0;}"
-			."html body .adapt-img-wrapper.lazy,html.lazy body .adapt-img-wrapper,html body .adapt-img-wrapper.lazy::after,html.lazy body .adapt-img-wrapper::after{background-image:none}"
-			.".adapt-img-wrapper::after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
-			."@media print{html .adapt-img-wrapper{background:none}html .adapt-img-wrapper img {opacity:1}html .adapt-img-wrapper::after{display:none}}"
-			."</style>\n";
-			// JS that evaluate connection speed and add a aislow class on <html> if slow connection
-			// and onload JS that adds CSS to finish rendering
-			$async_style = "html img.adapt-img{opacity:0.01}html .adapt-img-wrapper::after{display:none;}";
-			$length = strlen($html)+strlen($ins_style)+2000; // ~2000 bytes for CSS and minified JS we add here
-			// minified version of AdaptiveImages.js (using https://closure-compiler.appspot.com/home)
-			$ins = "<script type='text/javascript'>/*<![CDATA[*/var adaptImgDocLength=$length;adaptImgAsyncStyles=\"$async_style\";adaptImgLazy=".($this->lazyload?"true":"false").";".<<<JS
+			$noscript = "";
+			switch ($this->markupMethod) {
+				case 'srcset':
+					$base_style = "<style type='text/css'>"
+					."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}"
+					.".adapt-img-wrapper {display:inline-block;max-width:100%;position:relative;background-position:center;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
+					.".adapt-img-background{width:100%;height:0}"
+					."@media print{html .adapt-img-wrapper{background:none}"
+					."</style>\n";
+					// JS that evaluate connection speed and add a aislow class on <html> if slow connection
+					// and onload JS that adds CSS to finish rendering
+					$async_style = "picture.adapt-img-wrapper{background:none!important}";
+					$length = 1500; // ~1500 bytes for CSS and minified JS we add here
+					// minified version of AdaptiveImages-light.js (using https://closure-compiler.appspot.com/home)
+					$js = <<<JS
+(function(){function d(a){var b=document.documentElement;b.className=b.className+" "+a}function f(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}document.createElement("picture");adaptImgLazy&&d("lazy");var a=!1;if("undefined"!==typeof window.performance)a=window.performance.timing,a=(a=~~(adaptImgDocLength/(a.responseEnd-a.connectStart)))&&50>a;else{var c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;"undefined"!==typeof c&&
+(a=3==c.type||4==c.type||/^[23]g$/.test(c.type))}a&&d("aislow");var e=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b);window.matchMedia||window.onbeforeprint||beforePrint()};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(e)}):f(e)})();
+JS;
+					break;
+				case '3layers':
+				default:
+					$base_style = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}img.adapt-img.blur{filter:blur(5px)}"
+					.".adapt-img-wrapper,.adapt-img-wrapper::after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
+					.".adapt-img-background{width:100%;height:0}.adapt-img-background::after{display:none;width:100%;height:0;}"
+					."html body .adapt-img-wrapper.lazy,html.lazy body .adapt-img-wrapper,html body .adapt-img-wrapper.lazy::after,html.lazy body .adapt-img-wrapper::after{background-image:none}"
+					.".adapt-img-wrapper::after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
+					."@media print{html .adapt-img-wrapper{background:none}html .adapt-img-wrapper img {opacity:1}html .adapt-img-wrapper::after{display:none}}"
+					."</style>\n";
+					// JS that evaluate connection speed and add a aislow class on <html> if slow connection
+					// and onload JS that adds CSS to finish rendering
+					$async_style = "html img.adapt-img{opacity:0.01}html .adapt-img-wrapper::after{display:none;}";
+					$length = 2000; // ~2000 bytes for CSS and minified JS we add here
+					// minified version of AdaptiveImages.js (using https://closure-compiler.appspot.com/home)
+					$js = <<<JS
 function adaptImgFix(d){var e=window.getComputedStyle(d.parentNode).backgroundImage.replace(/\W?\)$/,"").replace(/^url\(\W?|/,"");d.src=e&&"none"!=e?e:d.src}(function(){function d(a){var b=document.documentElement;b.className=b.className+" "+a}function e(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}document.createElement("picture");adaptImgLazy&&d("lazy");/android 2[.]/i.test(navigator.userAgent.toLowerCase())&&d("android2");var c=!1;if("undefined"!==typeof window.performance)c=window.performance.timing,c=(c=~~(adaptImgDocLength/(c.responseEnd-c.connectStart)))&&50>c;else{var f=navigator.connection||navigator.mozConnection||navigator.webkitConnection;"undefined"!==typeof f&&(c=3==f.type||4==f.type||/^[23]g$/.test(f.type))}c&&d("aislow");var h=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b);window.matchMedia||window.onbeforeprint||g()};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(h)}):e(h);var g=function(){for(var a=document.getElementsByClassName("adapt-img"),b=0;b<a.length;b++)adaptImgFix(a[b])};window.matchMedia&&window.matchMedia("print").addListener(function(a){g()});"undefined"!==typeof window.onbeforeprint&&(window.onbeforeprint=g)})();
 JS;
-			$ins .= "/*]]>*/</script>\n";
-			// alternative noscript if no js (to de-activate progressive rendering on PNG and GIF)
-			if (!$this->nojsPngGifProgressiveRendering)
-				$ins .= "<noscript><style type='text/css'>.png img.adapt-img,.gif img.adapt-img{opacity:0.01} .adapt-img-wrapper.png::after,.adapt-img-wrapper.gif::after{display:none;}</style></noscript>";
+					// alternative noscript if no js (to de-activate progressive rendering on PNG and GIF)
+					if (!$this->nojsPngGifProgressiveRendering)
+						$noscript = "<noscript><style type='text/css'>.png img.adapt-img,.gif img.adapt-img{opacity:0.01} .adapt-img-wrapper.png::after,.adapt-img-wrapper.gif::after{display:none;}</style></noscript>";
 
+					break;
+			}
+			$length += strlen($html)+strlen($ins_style);
+			$ins = "<script type='text/javascript'>/*<![CDATA[*/var adaptImgDocLength=$length;adaptImgAsyncStyles=\"$async_style\";adaptImgLazy=".($this->lazyload?"true":"false").";{$js}/*]]>*/</script>\n";
+			$ins .= $noscript;
 			$ins .= $ins_style;
 
 			// insert before first <script or <link
@@ -817,72 +842,15 @@ JS;
 		}
 		ksort($bkptImages);
 
-		if (!$asBackground and $this->markupMethod === 'srcset') {
-			return $this->imgAdaptiveSrcsetMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground);
-		}
-
-		// default method
-		return $this->imgAdaptive3LayersMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground);
-	}
-
-	/**
-	 * Build html markup with CSS rules in <style> tag
-	 * from provided img tag and array of bkpt images
-	 *
-	 * @param string $img
-	 *   source img tag
-	 * @param array $bkptImages
-	 *     falbback => file
-	 *     width =>
-	 *        10x => file
-	 *        15x => file
-	 *        20x => file
-	 * @param int $width
-	 * @param int $height
-	 * @param string $extension
-	 * @param int $maxWidth1x
-	 * @param bool $asBackground
-	 * @return string
-	 */
-	protected function imgAdaptiveSrcsetMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground = false){
-		// TODO
-	}
-
-	/**
-	 * Build html markup with CSS rules in <style> tag
-	 * from provided img tag and array of bkpt images
-	 *
-	 * @param string $img
-	 *   source img tag
-	 * @param array $bkptImages
-	 *     falbback => file
-	 *     width =>
-	 *        10x => file
-	 *        15x => file
-	 *        20x => file
-	 * @param int $width
-	 * @param int $height
-	 * @param string $extension
-	 * @param int $maxWidth1x
-	 * @param bool $asBackground
-	 * @return string
-	 */
-	protected function imgAdaptive3LayersMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground = false){
-		$originalClass = $class = $this->tagAttribute($img,"class");
-
-		$cid = "c".crc32(serialize($bkptImages));
-		$style = "";
-		$img = $this->setTagAttribute($img,"class","adapt-img-ie $class");
-
 		// provided fallback image?
 		$fallback_file = "";
+		$fallback_class = "";
 		if (isset($bkptImages['fallback'])){
 			$fallback_file = $bkptImages['fallback'];
 			unset($bkptImages['fallback']);
 		}
 		if (isset($bkptImages['fallback_class'])){
 			$fallback_class = $bkptImages['fallback_class'];
-			$class = trim("$fallback_class $class");
 			unset($bkptImages['fallback_class']);
 		}
 
@@ -891,6 +859,123 @@ JS;
 			$fallback_file = reset($bkptImages);
 			$fallback_file = $fallback_file['10x'];
 		}
+
+		if (!$asBackground and $this->markupMethod === 'srcset') {
+			return $this->imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground);
+		}
+
+		// default method
+		return $this->imgAdaptive3LayersMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground);
+	}
+
+	/**
+	 * Build html markup with CSS rules in <style> tag
+	 * from provided img tag and array of bkpt images
+	 *
+	 * @param string $img
+	 *   source img tag
+	 * @param string $fallback_file
+	 *   file for fallback/preview
+	 * @param string $fallback_class
+	 *   class for fallback/preview img
+	 * @param array $bkptImages
+	 *     falbback => file
+	 *     width =>
+	 *        10x => file
+	 *        15x => file
+	 *        20x => file
+	 * @param int $width
+	 * @param int $height
+	 * @param string $extension
+	 * @param int $maxWidth1x
+	 * @return string
+	 */
+	protected function imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x){
+		$originalClass = $class = $this->tagAttribute($img,"class");
+
+		$cid = "c".crc32(serialize($bkptImages));
+		$style = "";
+
+		// embed fallback as a DATA URI if not more than 32ko
+		$fallback_file = $this->base64EmbedFile($fallback_file);
+
+		$srcset = array(
+			'20x' => array(),
+			'15x' => array(),
+			'10x' => array(),
+		);
+		$default_file = "";
+
+		foreach ($bkptImages as $w=>$files){
+			foreach($files as $kx=>$file){
+				if (isset($srcset[$kx])){
+					$url = $this->filepath2URL($file);
+					$width = round($w * intval($kx) / 10);
+					$srcset[$kx][] = "$url {$width}w";
+				}
+			}
+			if (isset($files['10x']) and (!$default_file or $w <= $maxWidth1x)) {
+				$default_file = $files['10x'];
+			}
+		}
+
+		// Media-Queries
+		$style = "";
+		$originalStyle = $this->tagAttribute($img,"style");
+
+		$srcet = implode(', ', $srcset['10x']);
+		unset($srcset['10x']);
+
+		$sources = array();
+		foreach ($srcset as $kx => $files) {
+			$files = implode(', ', $files);
+			$dp = intval($kx)/10;
+			$sources[] = "<source media=\"(-webkit-min-device-pixel-ratio: {$dp}), (min-resolution: {$dp}dppx)\" srcset=\"$files\" >";
+		}
+		$sources = "<!--[if IE 9]><video style=\"display: none;\"><![endif]-->".implode("",$sources)."<!--[if IE 9]></video><![endif]-->";
+
+		$img = $this->setTagAttribute($img,"src",$this->filepath2URL($default_file));
+		$img = $this->setTagAttribute($img,"class",trim("adapt-img $class"));
+		$img = $this->setTagAttribute($img,"srcset",$srcet);
+
+		// markup can be adjusted in hook, depending on style and class
+		$markup = "<picture class=\"adapt-img-wrapper $cid $extension\" style=\"background-image:url($fallback_file)\">\n$sources\n$img</picture>";
+		$markup = $this->imgMarkupHook($markup,$originalClass,$originalStyle);
+
+		return $markup;
+	}
+
+	/**
+	 * Build html markup with CSS rules in <style> tag
+	 * from provided img tag and array of bkpt images
+	 *
+	 * @param string $img
+	 *   source img tag
+	 * @param string $fallback_file
+	 *   file for fallback/preview
+	 * @param string $fallback_class
+	 *   class for fallback/preview img
+	 * @param array $bkptImages
+	 *     falbback => file
+	 *     width =>
+	 *        10x => file
+	 *        15x => file
+	 *        20x => file
+	 * @param int $width
+	 * @param int $height
+	 * @param string $extension
+	 * @param int $maxWidth1x
+	 * @param bool $asBackground
+	 * @return string
+	 */
+	protected function imgAdaptive3LayersMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground = false){
+		$originalClass = $class = $this->tagAttribute($img,"class");
+
+		$cid = "c".crc32(serialize($bkptImages));
+		$style = "";
+		$img = $this->setTagAttribute($img,"class","adapt-img-ie $class");
+		$class = trim("$fallback_class $class");
+
 		// embed fallback as a DATA URI if not more than 32ko
 		$fallback_file = $this->base64EmbedFile($fallback_file);
 		// if it is not a vectorial image, encapsulate it in a svg to avoid the pixel rounding flickering
@@ -958,7 +1043,7 @@ SVG;
 			$out = "<!--[if IE]>$img<![endif]-->\n";
 
 			$img = $this->setTagAttribute($img,"src",$fallback_file);
-			$img = $this->setTagAttribute($img,"class",trim("adapt-img $class"));
+			$img = $this->setTagAttribute($img,"class",trim("adapt-img adapt-img-multilayers $class"));
 			$img = $this->setTagAttribute($img,"onmousedown","adaptImgFix(this)");
 			// $img = setTagAttribute($img,"onkeydown","adaptImgFix(this)"); // useful ?
 

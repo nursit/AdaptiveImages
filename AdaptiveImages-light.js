@@ -1,7 +1,7 @@
-function adaptImgFix(n){
+/*function adaptImgFix(n){
 	var i = window.getComputedStyle(n.parentNode).backgroundImage.replace(/\W?\)$/, '').replace(/^url\(\W?|/, '');
 	n.src = (i && i!='none' ? i : n.src);
-}
+}*/
 (function (){
 	// picture polyfill for browser not knowing it
 	document.createElement('picture');
@@ -19,10 +19,10 @@ function adaptImgFix(n){
 	// Android 2 media-queries bad support workaround
 	// multiple rules = multiples downloads : put .android2 on <html>
 	// use with simple css without media-queries and send compressive image
-	var android2 = (/android 2[.]/i.test(navigator.userAgent.toLowerCase()));
+	/*var android2 = (/android 2[.]/i.test(navigator.userAgent.toLowerCase()));
 	if (android2){
 		htmlAddClass('android2');
-	}
+	}*/
 	// slowConnection detection
 	var slowConnection = false;
 	if (typeof window.performance!=="undefined"){
@@ -75,7 +75,7 @@ function adaptImgFix(n){
 	}); else addLoadEvent(adaptImg_onload);
 
 	// print issue : fix all img
-	var beforePrint = function (){
+	/*var beforePrint = function (){
 		var is = document.getElementsByClassName('adapt-img-multilayers');
 		for (var i = 0; i<is.length; i++)
 			adaptImgFix(is[i]);
@@ -89,5 +89,5 @@ function adaptImgFix(n){
 	}
 	if (typeof(window.onbeforeprint)!=="undefined")
 		window.onbeforeprint = beforePrint;
-
+*/
 })();
