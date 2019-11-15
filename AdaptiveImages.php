@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    1.11.5
+ * @version    2.0.0
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -116,6 +116,12 @@ class AdaptiveImages {
 	 * @var string
 	 */
 	protected $maxImagePxGDMemoryLimit = 0;
+
+	/**
+	 * Choose the markup Methd : '3layers' (default) or 'srcset'
+	 * @var string
+	 */
+	protected $markupMethod = '3layers';
 
 	/**
 	 * Set to true to delay loading with .lazy class on <html>
@@ -805,16 +811,71 @@ JS;
 	 * @return string
 	 */
 	protected function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground = false){
-		$originalClass = $class = $this->tagAttribute($img,"class");
-		if (strpos($class,"adapt-img")!==false) return $img;
+		$class = $this->tagAttribute($img, "class");
+		if (strpos($class, "adapt-img")!==false){
+			return $img;
+		}
 		ksort($bkptImages);
+
+		if (!$asBackground and $this->markupMethod === 'srcset') {
+			return $this->imgAdaptiveSrcsetMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground);
+		}
+
+		// default method
+		return $this->imgAdaptive3LayersMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground);
+	}
+
+	/**
+	 * Build html markup with CSS rules in <style> tag
+	 * from provided img tag and array of bkpt images
+	 *
+	 * @param string $img
+	 *   source img tag
+	 * @param array $bkptImages
+	 *     falbback => file
+	 *     width =>
+	 *        10x => file
+	 *        15x => file
+	 *        20x => file
+	 * @param int $width
+	 * @param int $height
+	 * @param string $extension
+	 * @param int $maxWidth1x
+	 * @param bool $asBackground
+	 * @return string
+	 */
+	protected function imgAdaptiveSrcsetMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground = false){
+		// TODO
+	}
+
+	/**
+	 * Build html markup with CSS rules in <style> tag
+	 * from provided img tag and array of bkpt images
+	 *
+	 * @param string $img
+	 *   source img tag
+	 * @param array $bkptImages
+	 *     falbback => file
+	 *     width =>
+	 *        10x => file
+	 *        15x => file
+	 *        20x => file
+	 * @param int $width
+	 * @param int $height
+	 * @param string $extension
+	 * @param int $maxWidth1x
+	 * @param bool $asBackground
+	 * @return string
+	 */
+	protected function imgAdaptive3LayersMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground = false){
+		$originalClass = $class = $this->tagAttribute($img,"class");
+
 		$cid = "c".crc32(serialize($bkptImages));
 		$style = "";
 		$img = $this->setTagAttribute($img,"class","adapt-img-ie $class");
 
 		// provided fallback image?
 		$fallback_file = "";
-		$fallback_class = "";
 		if (isset($bkptImages['fallback'])){
 			$fallback_file = $bkptImages['fallback'];
 			unset($bkptImages['fallback']);
