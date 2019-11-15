@@ -337,7 +337,7 @@ class AdaptiveImages {
 					."</style>\n";
 					// JS that evaluate connection speed and add a aislow class on <html> if slow connection
 					// and onload JS that adds CSS to finish rendering
-					$async_style = "picture.adapt-img-wrapper{background:none!important}";
+					$async_style = "picture.adapt-img-wrapper{background-size:0;}";
 					$length = 1500; // ~1500 bytes for CSS and minified JS we add here
 					// minified version of AdaptiveImages-light.js (using https://closure-compiler.appspot.com/home)
 					$js = <<<JS
@@ -918,6 +918,8 @@ JS;
 				$default_file = $files['10x'];
 			}
 		}
+
+		// TODO : mobile authoring image version
 
 		// Media-Queries
 		$style = "";
