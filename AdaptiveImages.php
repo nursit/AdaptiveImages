@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.0.2
+ * @version    2.0.3
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -388,12 +388,23 @@ JS;
 	 *   HTML source page
 	 * @param int $maxWidth1x
 	 *   max display width for images 1x
-	 * @param bool $asBackground
-	 *   markup with image as a background only
+	 * @param bool $asBackgroundOrSizes
+	 *   true : markup with image as a background only
+	 *   string|array : sizes attribut for srcset method
 	 * @param array|null $bkpt
 	 * @return string
+	 * @throws Exception
 	 */
-	public function adaptHTMLPart($html,$maxWidth1x=null,$bkpt=null,$asBackground=false){
+	public function adaptHTMLPart($html,$maxWidth1x=null,$bkpt=null,$asBackgroundOrSizes=false){
+		$asBackground = false;
+		$sizes = null;
+		if ($asBackgroundOrSizes === true) {
+			$asBackground = true;
+		}
+		elseif(is_array($asBackgroundOrSizes) or is_string($asBackgroundOrSizes)) {
+			$sizes = $asBackgroundOrSizes;
+		}
+
 		static $bkpts = array();
 		if (is_null($maxWidth1x) OR !intval($maxWidth1x))
 			$maxWidth1x = $this->maxWidth1x;
@@ -416,7 +427,7 @@ JS;
 		preg_match_all(",<img\s[^>]*>,Uims",$html,$matches,PREG_SET_ORDER);
 		if (count($matches)){
 			foreach($matches as $m){
-				$ri = $this->processImgTag($m[0], $bkpt, $maxWidth1x, $asBackground);
+				$ri = $this->processImgTag($m[0], $bkpt, $maxWidth1x, $sizes, $asBackground);
 				if ($ri!==$m[0]){
 					$replace[$m[0]] = $ri;
 				}
@@ -596,12 +607,15 @@ JS;
 	 *   breakpoints
 	 * @param int $maxWidth1x
 	 *   max display with of image (in 1x)
+	 * @param string|array $sizes
+	 *   informations for sizez attribut in the srcset method
 	 * @param bool $asBackground
 	 *   markup with image as a background only
 	 * @return string
 	 *   html markup : original markup or adapted markup
+	 * @throws Exception
 	 */
-	protected function processImgTag($img, $bkpt, $maxWidth1x, $asBackground = false){
+	protected function processImgTag($img, $bkpt, $maxWidth1x, $sizes = null, $asBackground = false){
 		if (!$img) return $img;
 
 		// don't do anyting if has adapt-img (already adaptive) or no-adapt-img class (no adaptative needed)
@@ -662,7 +676,7 @@ JS;
 				'10x' => $src,
 			);
 			// build the markup for background
-			return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x, $asBackground);
+			return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x, $sizes, $asBackground);
 		}
 
 		if ($srcMobile) {
@@ -802,7 +816,7 @@ JS;
 		$img = $this->setTagAttribute($img,"height",$h);
 
 		// ok, now build the markup
-		return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x, $asBackground);
+		return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x, $sizes, $asBackground);
 	}
 
 	/**
@@ -841,10 +855,11 @@ JS;
 	 * @param int $height
 	 * @param string $extension
 	 * @param int $maxWidth1x
+	 * @param string|array $sizes
 	 * @param bool $asBackground
 	 * @return string
 	 */
-	protected function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground = false){
+	protected function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $sizes=null, $asBackground = false){
 		$class = $this->tagAttribute($img, "class");
 		if (strpos($class, "adapt-img")!==false){
 			return $img;
@@ -876,7 +891,7 @@ JS;
 		}
 
 		if (!$asBackground and $this->markupMethod === 'srcset') {
-			return $this->imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile);
+			return $this->imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile, $sizes);
 		}
 
 		// default method
@@ -904,9 +919,10 @@ JS;
 	 * @param string $extension
 	 * @param int $maxWidth1x
 	 * @param int $maxWidthMobile
+	 * @param string|array $sizes
 	 * @return string
 	 */
-	protected function imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile=null){
+	protected function imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile=null, $sizes = null){
 		$originalClass = $class = $this->tagAttribute($img,"class");
 
 		$cid = "c".crc32(serialize($bkptImages));
@@ -958,8 +974,24 @@ JS;
 
 		// base sizes rule: fix the max width
 		$sizes_rule = array("(min-width: {$maxWidth1x}px) {$maxWidth1x}px");
-		// TODO : allow to set a better default sizes rule, and to pass specific sizes rule for each call
-		$sizes_rule[] = "100vw";
+		$need_default_size = true;
+		if (is_string($sizes)) {
+			$sizes = explode(',', $sizes);
+			$sizes = array_map('trim', $sizes);
+		}
+		if (is_array($sizes)) {
+			while(count($sizes)) {
+				$s = array_shift($sizes);
+				$sizes_rule[] = $s;
+				if (strpos($s, "(") === false) {
+					$need_default_size = false;
+				}
+			}
+		}
+		// set a defaut size rule if not provided (one without media query)
+		if ($need_default_size) {
+			$sizes_rule[] = "100vw";
+		}
 		$sizes_rule = implode(', ', $sizes_rule);
 
 		$sources = array();
