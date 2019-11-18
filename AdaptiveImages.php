@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.0.0
+ * @version    2.0.1
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -665,8 +665,13 @@ JS;
 			return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x, $asBackground);
 		}
 
-		if ($srcMobile)
+		if ($srcMobile) {
 			$srcMobile = $this->URL2filepath($srcMobile);
+			list($wmobile,) = @getimagesize($srcMobile);
+			if (!$wmobile) {
+				$wmobile = $w;
+			}
+		}
 
 		$images = array();
 		if ($w<end($bkpt))
@@ -684,10 +689,14 @@ JS;
 		foreach ($bkpt as $wk){
 			if ($wk>$w) break;
 			$is_mobile = (($srcMobile AND $wk<=$this->maxWidthMobileVersion) ? true : false);
+			if ($is_mobile) {
+				// say we have a mobile version for width under
+				$images['maxWidthMobile'] = $this->maxWidthMobileVersion;
+			}
 			foreach ($dpi as $k => $x){
 				$wkx = intval(round($wk*$x));
-				if ($wkx>$w)
-					$images[$wk][$k] = $src;
+				if ($wkx>($is_mobile ? $wmobile: $w))
+					$images[$wk][$k] = $is_mobile ? $srcMobile : $src;
 				else {
 					$images[$wk][$k] = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wk, $wkx, $k, $extension);
 				}
@@ -860,8 +869,14 @@ JS;
 			$fallback_file = $fallback_file['10x'];
 		}
 
+		$maxWidthMobile = null;
+		if (isset($bkptImages['maxWidthMobile'])) {
+			$maxWidthMobile = $bkptImages['maxWidthMobile'];
+			unset($bkptImages['maxWidthMobile']);
+		}
+
 		if (!$asBackground and $this->markupMethod === 'srcset') {
-			return $this->imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground);
+			return $this->imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile);
 		}
 
 		// default method
@@ -888,9 +903,10 @@ JS;
 	 * @param int $height
 	 * @param string $extension
 	 * @param int $maxWidth1x
+	 * @param int $maxWidthMobile
 	 * @return string
 	 */
-	protected function imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x){
+	protected function imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile=null){
 		$originalClass = $class = $this->tagAttribute($img,"class");
 
 		$cid = "c".crc32(serialize($bkptImages));
@@ -899,7 +915,16 @@ JS;
 		// embed fallback as a DATA URI if not more than 32ko
 		$fallback_file = $this->base64EmbedFile($fallback_file);
 
-		$srcset = array(
+		$srcset = array();
+		if ($maxWidthMobile) {
+			$srcset['mobile'] = array(
+				'20x' => array(), // est-ce qu'on veut envoyer du mobile en 2x ?
+				'15x' => array(), // est-ce qu'on veut envoyer du mobile en 1.5x ?
+				'10x' => array(),
+			);
+		}
+
+		$srcset['all'] = array(
 			'20x' => array(),
 			'15x' => array(),
 			'10x' => array(),
@@ -908,37 +933,48 @@ JS;
 
 		foreach ($bkptImages as $w=>$files){
 			foreach($files as $kx=>$file){
-				if (isset($srcset[$kx])){
+				$srcset_key = 'all';
+				if ($maxWidthMobile and $w<=$maxWidthMobile) {
+					$srcset_key = 'mobile';
+				}
+				if (isset($srcset[$srcset_key][$kx])){
 					$url = $this->filepath2URL($file);
 					$width = round($w * intval($kx) / 10);
-					$srcset[$kx][] = "$url {$width}w";
+					$srcset[$srcset_key][$kx][] = "$url {$width}w";
 				}
 			}
+			// set the default src : will be the largest 1x file smaller than the max-width
 			if (isset($files['10x']) and (!$default_file or $w <= $maxWidth1x)) {
 				$default_file = $files['10x'];
 			}
 		}
 
-		// TODO : mobile authoring image version
-
 		// Media-Queries
 		$style = "";
 		$originalStyle = $this->tagAttribute($img,"style");
 
-		$srcet = implode(', ', $srcset['10x']);
+		$srcset_base = implode(', ', $srcset['10x']);
 		unset($srcset['10x']);
 
 		$sources = array();
-		foreach ($srcset as $kx => $files) {
-			$files = implode(', ', $files);
-			$dp = intval($kx)/10;
-			$sources[] = "<source media=\"(-webkit-min-device-pixel-ratio: {$dp}), (min-resolution: {$dp}dppx)\" srcset=\"$files\" >";
+		foreach ($srcset as $dest=>$srcset_dest) {
+			if ($dest === 'mobile') {
+				$mq_max_width = "(max-width:{$maxWidthMobile}px) and ";
+			}
+			else {
+				$mq_max_width = "";
+			}
+			foreach ($srcset_dest as $kx => $files) {
+				$files = implode(', ', $files);
+				$dp = intval($kx)/10;
+				$sources[] = "<source media=\"{$mq_max_width}(-webkit-min-device-pixel-ratio: {$dp}), {$mq_max_width}(min-resolution: {$dp}dppx)\" srcset=\"$files\" >";
+			}
 		}
 		$sources = "<!--[if IE 9]><video style=\"display: none;\"><![endif]-->".implode("",$sources)."<!--[if IE 9]></video><![endif]-->";
 
 		$img = $this->setTagAttribute($img,"src",$this->filepath2URL($default_file));
 		$img = $this->setTagAttribute($img,"class",trim("adapt-img $class"));
-		$img = $this->setTagAttribute($img,"srcset",$srcet);
+		$img = $this->setTagAttribute($img,"srcset",$srcset_base);
 
 		// markup can be adjusted in hook, depending on style and class
 		$markup = "<picture class=\"adapt-img-wrapper $cid $extension\" style=\"background-image:url($fallback_file)\">\n$sources\n$img</picture>";
