@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.0.1
+ * @version    2.0.2
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -956,6 +956,12 @@ JS;
 		$srcset_base = implode(', ', $srcset['all']['10x']);
 		unset($srcset['all']['10x']);
 
+		// base sizes rule: fix the max width
+		$sizes_rule = array("(min-width: {$maxWidth1x}px) {$maxWidth1x}px");
+		// TODO : allow to set a better default sizes rule, and to pass specific sizes rule for each call
+		$sizes_rule[] = "100vw";
+		$sizes_rule = implode(', ', $sizes_rule);
+
 		$sources = array();
 		foreach ($srcset as $dest=>$srcset_dest) {
 			if ($dest === 'mobile') {
@@ -977,6 +983,7 @@ JS;
 		if ($srcset_base) {
 			$img = $this->setTagAttribute($img,"srcset",$srcset_base);
 		}
+		$img = $this->setTagAttribute($img,"sizes",$sizes_rule);
 
 		// markup can be adjusted in hook, depending on style and class
 		$markup = "<picture class=\"adapt-img-wrapper $cid $extension\" style=\"background-image:url($fallback_file)\">\n$sources\n$img</picture>";
