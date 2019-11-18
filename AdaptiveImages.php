@@ -953,8 +953,8 @@ JS;
 		$style = "";
 		$originalStyle = $this->tagAttribute($img,"style");
 
-		$srcset_base = implode(', ', $srcset['10x']);
-		unset($srcset['10x']);
+		$srcset_base = implode(', ', $srcset['all']['10x']);
+		unset($srcset['all']['10x']);
 
 		$sources = array();
 		foreach ($srcset as $dest=>$srcset_dest) {
@@ -974,7 +974,9 @@ JS;
 
 		$img = $this->setTagAttribute($img,"src",$this->filepath2URL($default_file));
 		$img = $this->setTagAttribute($img,"class",trim("adapt-img $class"));
-		$img = $this->setTagAttribute($img,"srcset",$srcset_base);
+		if ($srcset_base) {
+			$img = $this->setTagAttribute($img,"srcset",$srcset_base);
+		}
 
 		// markup can be adjusted in hook, depending on style and class
 		$markup = "<picture class=\"adapt-img-wrapper $cid $extension\" style=\"background-image:url($fallback_file)\">\n$sources\n$img</picture>";
