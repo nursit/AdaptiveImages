@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.0.4
+ * @version    2.0.5
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -342,8 +342,8 @@ class AdaptiveImages {
 					$base_style = "<style type='text/css'>"
 					."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}"
 					.".adapt-img-wrapper {display:inline-block;max-width:100%;position:relative;background-position:center;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
-					.".adapt-img-wrapper.intrinsic{height:0;}.adapt-img-wrapper.intrinsic img{position:absolute;left:0;top:0;width:100%;height:auto;}"
-					."@media (min-width:{$minwidthdesktop}px){.adapt-img-wrapper.intrinsic-desktop{height:0;}.adapt-img-wrapper.intrinsic-desktop img{position:absolute;left:0;top:0;width:100%;height:auto;}}"
+					.".adapt-img-wrapper.intrinsic::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic img{position:absolute;left:0;top:0;width:100%;height:auto;}"
+					."@media (min-width:{$minwidthdesktop}px){.adapt-img-wrapper.intrinsic-desktop::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic-desktop img{position:absolute;left:0;top:0;width:100%;height:auto;}}"
 					.".adapt-img-background{width:100%;height:0}"
 					."@media print{html .adapt-img-wrapper{background:none}"
 					."</style>\n";
@@ -386,8 +386,15 @@ JS;
 			$ins .= $ins_style;
 
 			// insert before first <script or <link
-			if ($p = strpos($html,"<link") OR $p = strpos($html,"<script") OR $p = strpos($html,"</head")) {
-				$html = substr_replace($html,"$base_style<!--[if !IE]><!-->$ins\n<!--<![endif]-->\n",$p,0);
+			$ins = "$base_style<!--[if !IE]><!-->$ins\n<!--<![endif]-->\n";
+			if ($p = strpos($html,"<link")
+				or $p = strpos($html,"<script")
+				or $p = strpos($html,"</head")
+				or $p = strpos($html,"</body")) {
+				$html = substr_replace($html,$ins,$p,0);
+			}
+			else {
+				$html .= $ins;
 			}
 		}
 		return $html;
@@ -995,10 +1002,10 @@ JS;
 			if ($maxWidthMobile) {
 				$intrinsic = " intrinsic-desktop";
 				$minWidthDesktop = $maxWidthMobile + 0.5;
-				$style .= "@media (min-width: {$minWidthDesktop}px){.intrinsic-desktop.{$cid} {padding-bottom:{$ratio}%}}";
+				$style .= "@media (min-width: {$minWidthDesktop}px){.intrinsic-desktop.{$cid}::before {padding-bottom:{$ratio}%}}";
 			}
 			else {
-				$style .= ".intrinsic.{$cid} {padding-bottom:{$ratio}%}";
+				$style .= ".intrinsic.{$cid}::before {padding-bottom:{$ratio}%}";
 			}
 		}
 
@@ -1006,8 +1013,9 @@ JS;
 		unset($srcset['all']['10x']);
 
 		// base sizes rule: fix the max width
-		$sizes_rule = array("(min-width: {$maxWidth1x}px) {$maxWidth1x}px");
-		$need_default_size = true;
+		$sizes_rule = array();
+		$default_size = false;
+		$need_max_size = true;
 		if (is_string($sizes)) {
 			$sizes = explode(',', $sizes);
 			$sizes = array_map('trim', $sizes);
@@ -1016,15 +1024,25 @@ JS;
 			while(count($sizes)) {
 				$s = array_shift($sizes);
 				$sizes_rule[] = $s;
-				if (strpos($s, "(") === false) {
-					$need_default_size = false;
+				if (strpos($s, "(") === false and intval(trim($s))) {
+					$default_size = intval(trim($s));
+				}
+				if (strpos($s, "min-width") !== false and strpos($s, "max-width") === false) {
+					$need_max_size = false;
 				}
 			}
 		}
 		// set a defaut size rule if not provided (one without media query)
-		if ($need_default_size) {
-			$sizes_rule[] = "100vw";
+		if (!$default_size) {
+			$default_size = 100;
+			$sizes_rule[] = "{$default_size}vw";
 		}
+		if ($need_max_size) {
+			// set the max-size for super large screens
+			$maxScreenWidth = intval(ceil($maxWidth1x * 100 / $default_size));
+			array_unshift($sizes_rule, "(min-width: {$maxScreenWidth}px) {$maxWidth1x}px");
+		}
+
 		$sizes_rule = implode(', ', $sizes_rule);
 
 		$sources = array();
@@ -1038,7 +1056,7 @@ JS;
 			foreach ($srcset_dest as $kx => $files) {
 				$files = implode(', ', $files);
 				$dp = intval($kx)/10;
-				$sources[] = "<source media=\"{$mq_max_width}(-webkit-min-device-pixel-ratio: {$dp}), {$mq_max_width}(min-resolution: {$dp}dppx)\" srcset=\"$files\" >";
+				$sources[] = "<source media=\"{$mq_max_width}(-webkit-min-device-pixel-ratio: {$dp}), {$mq_max_width}(min-resolution: {$dp}dppx)\" srcset=\"$files\" sizes=\"$sizes_rule\" >";
 			}
 		}
 		$sources = "<!--[if IE 9]><video style=\"display: none;\"><![endif]-->".implode("",$sources)."<!--[if IE 9]></video><![endif]-->";
