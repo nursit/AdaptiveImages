@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.0.3
+ * @version    2.0.4
  * @copyright  2013-2019
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -124,6 +124,12 @@ class AdaptiveImages {
 	protected $markupMethod = '3layers';
 
 	/**
+	 * Should images always be in an instrinsic container, even if using srcset method?
+	 * @var bool
+	 */
+	protected $alwaysIntrinsic = true;
+
+	/**
 	 * Set to true to delay loading with .lazy class on <html>
 	 * need extra js to add .lazy on adapt-img-wrapper, remove .lazy on <html>
 	 * and then remove .lazy on each .adapt-img-wrapper when visible
@@ -167,7 +173,7 @@ class AdaptiveImages {
 		if(!property_exists($this,$property) OR $property=="instances") {
       throw new InvalidArgumentException("Property {$property} doesn't exist");
     }
-		if (in_array($property,array("nojsPngGifProgressiveRendering","onDemandImages","lazyload"))){
+		if (in_array($property,array("nojsPngGifProgressiveRendering","onDemandImages","lazyload","alwaysIntrinsic"))){
 			if (!is_bool($value))
 				throw new InvalidArgumentException("Property {$property} needs a bool value");
 		}
@@ -319,19 +325,25 @@ class AdaptiveImages {
 		if (strpos($html,"adapt-img-wrapper")!==false){
 			$ins_style = "";
 			// collect all adapt-img <style> in order to put it in the <head>
-			preg_match_all(",<!--\[if !IE\]><!-->.*(<style[^>]*>(.*)</style>).*<!--<!\[endif\]-->,Ums",$html,$matches);
+			preg_match_all(",(<style[^>]*adaptive[^>]*>(.*)</style>),Ums",$html,$matches);
 			if (count($matches[2])){
 				$html = str_replace($matches[1],"",$html);
 				$ins_style .= "\n<style>".implode("\n",$matches[2])."\n</style>";
+				// in case of this was only including <style>
+				$html = str_replace("<!--[if !IE]><!--><!--<![endif]-->","",$html);
 			}
 
 			// Common styles for all adaptive images during loading
+
 			$noscript = "";
 			switch ($this->markupMethod) {
 				case 'srcset':
+					$minwidthdesktop = $this->maxWidthMobileVersion + 0.5;
 					$base_style = "<style type='text/css'>"
 					."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}"
 					.".adapt-img-wrapper {display:inline-block;max-width:100%;position:relative;background-position:center;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
+					.".adapt-img-wrapper.intrinsic{height:0;}.adapt-img-wrapper.intrinsic img{position:absolute;left:0;top:0;width:100%;height:auto;}"
+					."@media (min-width:{$minwidthdesktop}px){.adapt-img-wrapper.intrinsic-desktop{height:0;}.adapt-img-wrapper.intrinsic-desktop img{position:absolute;left:0;top:0;width:100%;height:auto;}}"
 					.".adapt-img-background{width:100%;height:0}"
 					."@media print{html .adapt-img-wrapper{background:none}"
 					."</style>\n";
@@ -374,8 +386,9 @@ JS;
 			$ins .= $ins_style;
 
 			// insert before first <script or <link
-			if ($p = strpos($html,"<link") OR $p = strpos($html,"<script") OR $p = strpos($html,"</head"))
+			if ($p = strpos($html,"<link") OR $p = strpos($html,"<script") OR $p = strpos($html,"</head")) {
 				$html = substr_replace($html,"$base_style<!--[if !IE]><!-->$ins\n<!--<![endif]-->\n",$p,0);
+			}
 		}
 		return $html;
 	}
@@ -681,7 +694,7 @@ JS;
 
 		if ($srcMobile) {
 			$srcMobile = $this->URL2filepath($srcMobile);
-			list($wmobile,) = @getimagesize($srcMobile);
+			list($wmobile, $hmobile) = @getimagesize($srcMobile);
 			if (!$wmobile) {
 				$wmobile = $w;
 			}
@@ -924,9 +937,16 @@ JS;
 	 */
 	protected function imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile=null, $sizes = null){
 		$originalClass = $class = $this->tagAttribute($img,"class");
+		$intrinsic = "";
+		if (strpos(" $class "," intrinsic ") !== false) {
+			$intrinsic = " intrinsic";
+		}
+		elseif ($this->alwaysIntrinsic) {
+			$intrinsic = " intrinsic";
+			$class = trim("$class intrinsic");
+		}
 
 		$cid = "c".crc32(serialize($bkptImages));
-		$style = "";
 
 		// embed fallback as a DATA URI if not more than 32ko
 		$fallback_file = $this->base64EmbedFile($fallback_file);
@@ -955,8 +975,8 @@ JS;
 				}
 				if (isset($srcset[$srcset_key][$kx])){
 					$url = $this->filepath2URL($file);
-					$width = round($w * intval($kx) / 10);
-					$srcset[$srcset_key][$kx][] = "$url {$width}w";
+					$ww = round($w * intval($kx) / 10);
+					$srcset[$srcset_key][$kx][] = "$url {$ww}w";
 				}
 			}
 			// set the default src : will be the largest 1x file smaller than the max-width
@@ -968,6 +988,19 @@ JS;
 		// Media-Queries
 		$style = "";
 		$originalStyle = $this->tagAttribute($img,"style");
+		if ($intrinsic){
+			$ratio = round($height/$width * 100,2);
+			// if there is a mobile variation, set the intrinsic only in desktop version, cause the mobile image could have different ratio
+			// moreover, the source switch maybe not synchronized with the intrinsic ratio switch
+			if ($maxWidthMobile) {
+				$intrinsic = " intrinsic-desktop";
+				$minWidthDesktop = $maxWidthMobile + 0.5;
+				$style .= "@media (min-width: {$minWidthDesktop}px){.intrinsic-desktop.{$cid} {padding-bottom:{$ratio}%}}";
+			}
+			else {
+				$style .= ".intrinsic.{$cid} {padding-bottom:{$ratio}%}";
+			}
+		}
 
 		$srcset_base = implode(', ', $srcset['all']['10x']);
 		unset($srcset['all']['10x']);
@@ -1018,9 +1051,12 @@ JS;
 		$img = $this->setTagAttribute($img,"sizes",$sizes_rule);
 
 		// markup can be adjusted in hook, depending on style and class
-		$markup = "<picture class=\"adapt-img-wrapper $cid $extension\" style=\"background-image:url($fallback_file)\">\n$sources\n$img</picture>";
+		$markup = "<picture class=\"adapt-img-wrapper{$intrinsic} $cid $extension\" style=\"background-image:url($fallback_file)\">\n$sources\n$img</picture>";
 		$markup = $this->imgMarkupHook($markup,$originalClass,$originalStyle);
 
+		if ($style) {
+			$markup .= "<!--[if !IE]><!--><style title='adaptive'>".$style."</style><!--<![endif]-->";
+		}
 		return $markup;
 	}
 
@@ -1130,7 +1166,7 @@ SVG;
 			$markup = "<picture class=\"adapt-img-wrapper $cid $extension\">$img</picture>";
 			$markup = $this->imgMarkupHook($markup,$originalClass,$originalStyle);
 
-			$out .= "<!--[if !IE]><!-->$markup\n<style>".$style."</style><!--<![endif]-->";
+			$out .= "<!--[if !IE]><!-->$markup\n<style title='adaptive'>".$style."</style><!--<![endif]-->";
 		}
 
 		return $out;
