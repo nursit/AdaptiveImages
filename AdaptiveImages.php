@@ -2,8 +2,8 @@
 /**
  * AdaptiveImages
  *
- * @version    2.0.5
- * @copyright  2013-2019
+ * @version    2.1.0
+ * @copyright  2013-2020
  * @author     Nursit
  * @licence    GNU/GPL3
  * @source     https://github.com/nursit/AdaptiveImages
@@ -58,7 +58,7 @@ class AdaptiveImages {
 	 * Breakpoints width for image generation
 	 * @var array
 	 */
-	protected $defaultBkpts = array(160,320,480,640,960,1440);
+	protected $defaultBkpts = array(480,960,1440);
 
 	/**
 	 * Maximum display width for images
@@ -70,7 +70,7 @@ class AdaptiveImages {
 	 * Minimum display width for adaptive images (smaller will be unchanged)
 	 * @var int
 	 */
-	protected $minWidth1x = 320;
+	protected $minWidth1x = 480;
 
 	/**
 	 * Minimum filesize for adaptive images (smaller will be unchanged)
@@ -82,7 +82,7 @@ class AdaptiveImages {
 	 * Maximum width for delivering mobile version in data-src-mobile=""
 	 * @var int
 	 */
-	protected $maxWidthMobileVersion = 320;
+	protected $maxWidthMobileVersion = 480;
 
 	/**
 	 * target width for fallback thumbnail
@@ -341,7 +341,7 @@ class AdaptiveImages {
 					$minwidthdesktop = $this->maxWidthMobileVersion + 0.5;
 					$base_style = "<style type='text/css'>"
 					."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}"
-					.".adapt-img-wrapper {display:inline-block;max-width:100%;position:relative;background-position:center;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
+					.".adapt-img-wrapper {display:block;max-width:100%;position:relative;background-position:center;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
 					.".adapt-img-wrapper.intrinsic::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic img{position:absolute;left:0;top:0;width:100%;height:auto;}"
 					."@media (min-width:{$minwidthdesktop}px){.adapt-img-wrapper.intrinsic-desktop::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic-desktop img{position:absolute;left:0;top:0;width:100%;height:auto;}}"
 					.".adapt-img-background{width:100%;height:0}"
@@ -360,7 +360,7 @@ JS;
 				case '3layers':
 				default:
 					$base_style = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}img.adapt-img.blur{filter:blur(5px)}"
-					.".adapt-img-wrapper,.adapt-img-wrapper::after{display:inline-block;max-width:100%;position:relative;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
+					.".adapt-img-wrapper,.adapt-img-wrapper::after{display:block;max-width:100%;position:relative;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
 					.".adapt-img-background{width:100%;height:0}.adapt-img-background::after{display:none;width:100%;height:0;}"
 					."html body .adapt-img-wrapper.lazy,html.lazy body .adapt-img-wrapper,html body .adapt-img-wrapper.lazy::after,html.lazy body .adapt-img-wrapper::after{background-image:none}"
 					.".adapt-img-wrapper::after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
