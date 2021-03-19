@@ -341,7 +341,7 @@ class AdaptiveImages {
 					$minwidthdesktop = $this->maxWidthMobileVersion + 0.5;
 					$base_style = "<style type='text/css'>"
 					."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}"
-					.".adapt-img-wrapper {display:inline-block;max-width:100%;position:relative;background-position:center;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
+					.".adapt-img-wrapper {display:inline-block;max-width:100%;position:relative;background-position:center;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
 					.".adapt-img-wrapper.intrinsic{display:block}.adapt-img-wrapper.intrinsic::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic img{position:absolute;left:0;top:0;width:100%;height:auto;}"
 					."@media (min-width:{$minwidthdesktop}px){.adapt-img-wrapper.intrinsic-desktop{display:block}.adapt-img-wrapper.intrinsic-desktop::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic-desktop img{position:absolute;left:0;top:0;width:100%;height:auto;}}"
 					.".adapt-img-background{width:100%;height:0}"
@@ -360,7 +360,7 @@ JS;
 				case '3layers':
 				default:
 					$base_style = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}img.adapt-img.blur{filter:blur(5px)}"
-					.".adapt-img-wrapper,.adapt-img-wrapper::after{display:block;max-width:100%;position:relative;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
+					.".adapt-img-wrapper,.adapt-img-wrapper::after{display:block;max-width:100%;position:relative;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
 					.".adapt-img-background{width:100%;height:0}.adapt-img-background::after{display:none;width:100%;height:0;}"
 					."html body .adapt-img-wrapper.lazy,html.lazy body .adapt-img-wrapper,html body .adapt-img-wrapper.lazy::after,html.lazy body .adapt-img-wrapper::after{background-image:none}"
 					.".adapt-img-wrapper::after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
