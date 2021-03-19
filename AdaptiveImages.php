@@ -881,7 +881,7 @@ JS;
 	 */
 	protected function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $sizes=null, $asBackground = false){
 		$class = $this->tagAttribute($img, "class");
-		if (strpos($class, "adapt-img")!==false){
+		if (!$width or strpos($class, "adapt-img")!==false){
 			return $img;
 		}
 		ksort($bkptImages);
