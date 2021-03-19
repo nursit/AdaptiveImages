@@ -341,9 +341,9 @@ class AdaptiveImages {
 					$minwidthdesktop = $this->maxWidthMobileVersion + 0.5;
 					$base_style = "<style type='text/css'>"
 					."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}"
-					.".adapt-img-wrapper {display:block;max-width:100%;position:relative;background-position:center;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
-					.".adapt-img-wrapper.intrinsic::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic img{position:absolute;left:0;top:0;width:100%;height:auto;}"
-					."@media (min-width:{$minwidthdesktop}px){.adapt-img-wrapper.intrinsic-desktop::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic-desktop img{position:absolute;left:0;top:0;width:100%;height:auto;}}"
+					.".adapt-img-wrapper {display:inline-block;max-width:100%;position:relative;background-position:center;-webkit-background-size:100% auto;-webkit-background-size:cover;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
+					.".adapt-img-wrapper.intrinsic{display:block}.adapt-img-wrapper.intrinsic::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic img{position:absolute;left:0;top:0;width:100%;height:auto;}"
+					."@media (min-width:{$minwidthdesktop}px){.adapt-img-wrapper.intrinsic-desktop{display:block}.adapt-img-wrapper.intrinsic-desktop::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic-desktop img{position:absolute;left:0;top:0;width:100%;height:auto;}}"
 					.".adapt-img-background{width:100%;height:0}"
 					."@media print{html .adapt-img-wrapper{background:none}"
 					."</style>\n";
@@ -1069,7 +1069,7 @@ JS;
 		$img = $this->setTagAttribute($img,"sizes",$sizes_rule);
 
 		// markup can be adjusted in hook, depending on style and class
-		$markup = "<picture class=\"adapt-img-wrapper{$intrinsic} $cid $extension\" style=\"background-image:url($fallback_file)\">\n$sources\n$img</picture>";
+		$markup = "<picture class=\"adapt-img-wrapper{$intrinsic} $cid $extension\" style=\"".($intrinsic ? "max-width:{$maxWidth1x}px;":"")."background-image:url($fallback_file)\">\n$sources\n$img</picture>";
 		$markup = $this->imgMarkupHook($markup,$originalClass,$originalStyle);
 
 		if ($style) {
