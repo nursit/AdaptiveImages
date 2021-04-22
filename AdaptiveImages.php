@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.2.0
+ * @version    2.2.1
  * @copyright  2013-2020
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -957,6 +957,15 @@ JS;
 
 		// embed fallback as a DATA URI if not more than 32ko
 		$fallback_file = $this->base64EmbedFile($fallback_file);
+		// if blur is requested, go through a svg wrapper as browsers doesnt support yet filter(url(...), blur(5px))
+		if (strpos($fallback_file, "image/svg") === false and $fallback_class==='blur') {
+			$svg_wrapper = <<<SVG
+<svg viewBox="0 0 $width $height" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<filter id="blur"><feGaussianBlur stdDeviation="7 7" edgeMode="duplicate" /><feComponentTransfer><feFuncA type="discrete" tableValues="1 1" /></feComponentTransfer></filter>
+<image filter="url(#blur)" width="$width" height="$height" xlink:href="$fallback_file" preserveAspectRatio="none"/></svg>
+SVG;
+			$fallback_file = 'data:'.$this->extensionToMimeType('svg').';base64,'.base64_encode($svg_wrapper);
+		}
 
 		$srcset = array();
 		if ($maxWidthMobile) {
