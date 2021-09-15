@@ -2,8 +2,8 @@
 /**
  * AdaptiveImages
  *
- * @version    2.2.1
- * @copyright  2013-2020
+ * @version    2.2.2
+ * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
  * @source     https://github.com/nursit/AdaptiveImages
@@ -1804,6 +1804,10 @@ SVG;
 				break;
 			case "jpg":
 			case "jpeg":
+				// Enable interlacing on large images (aka not thumbnail)
+				if (imagesx($img)*imagesy($img) > 100000) {
+					imageinterlace($img, true);
+				}
 				$ret = imagejpeg($img,$tmp,min($quality,100));
 				break;
 		}
