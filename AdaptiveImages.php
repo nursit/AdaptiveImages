@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.2.3
+ * @version    2.3.0
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -543,19 +543,7 @@ JS;
 
 		$forceSave = false;
 		if (is_null($quality)){
-			switch ($x) {
-				case '10x':
-					$quality = $this->x10JpgQuality;
-					break;
-				case '15x':
-					$quality = $this->x15JpgQuality;
-					$forceSave = true;
-					break;
-				case '20x':
-					$quality = $this->x20JpgQuality;
-					$forceSave = true;
-					break;
-			}
+			$quality = $this->qualityFromX(intval($x));
 		}
 
 		$i = $this->imgSharpResize($src,$dest,$wx,10000,$quality, $forceSave);
@@ -568,6 +556,26 @@ JS;
 		return $i;
 	}
 
+	/**
+	 * @param $x
+	 * @return int
+	 */
+	protected function qualityFromX($x) {
+		$x = intval($x);
+		if ($x <= 10) {
+			return $this->x10JpgQuality;
+		}
+		if ($x <= 15) {
+			if ($x === 15) {
+				return $this->x15JpgQuality;
+			}
+			return intval(round($this->x10JpgQuality + ($x-10) / 5 * ($this->x15JpgQuality - $this->x10JpgQuality)));
+		}
+		if ($x >= 20) {
+			return $this->x20JpgQuality;
+		}
+		return intval(round($this->x15JpgQuality + ($x-15) / 5 * ($this->x20JpgQuality - $this->x15JpgQuality)));
+	}
 
 	/**
 	 * Build an image variant from it's URL
@@ -711,12 +719,9 @@ JS;
 		}
 
 		$images = array();
-		if ($w<end($bkpt))
-			$images[$w] = array(
-				'10x' => $src,
-				'15x' => $src,
-				'20x' => $src,
-			);
+		if ($w<end($bkpt)) {
+			$bkpt[] = $w;
+		}
 
 		// build images (or at least URLs of images) on breakpoints
 		$fallback = $src;
@@ -732,10 +737,13 @@ JS;
 			}
 			foreach ($dpi as $k => $x){
 				$wkx = intval(round($wk*$x));
-				if ($wkx>($is_mobile ? $wmobile: $w))
+				if ($wkx>($is_mobile ? $wmobile: $w) and $x==1)
 					$images[$wk][$k] = $is_mobile ? $srcMobile : $src;
 				else {
-					$images[$wk][$k] = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wk, $wkx, $k, $extension);
+					// adapter la qualite a la vraie resolution si l'image n'est pas aussi grande que souhaitee
+					$ratio = min(1.0, intval($is_mobile ? $wmobile: $w) / $wkx);
+					$quality = $this->qualityFromX(round($x * 10 * $ratio));
+					$images[$wk][$k] = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wk, $wkx, $k, $extension, false, $quality);
 				}
 			}
 			if ($wk<=$maxWidth1x
