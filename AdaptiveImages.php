@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.2.2
+ * @version    2.2.3
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -541,6 +541,7 @@ JS;
 		if (!$force)
 			return $dest;
 
+		$forceSave = false;
 		if (is_null($quality)){
 			switch ($x) {
 				case '10x':
@@ -548,14 +549,16 @@ JS;
 					break;
 				case '15x':
 					$quality = $this->x15JpgQuality;
+					$forceSave = true;
 					break;
 				case '20x':
 					$quality = $this->x20JpgQuality;
+					$forceSave = true;
 					break;
 			}
 		}
 
-		$i = $this->imgSharpResize($src,$dest,$wx,10000,$quality);
+		$i = $this->imgSharpResize($src,$dest,$wx,10000,$quality, $forceSave);
 		if ($i AND $i!==$dest AND $i!==$src){
 			throw new Exception("Error in imgSharpResize: return \"$i\" whereas \"$dest\" expected");
 		}
@@ -1538,11 +1541,12 @@ SVG;
 	 * @param int $maxWidth
 	 * @param int $maxHeight
 	 * @param int|null $quality
+	 * @param bool $forceSaveWithQuality
 	 * @return string
 	 *   file name of the resized image (or source image if fail)
 	 * @throws Exception
 	 */
-	function imgSharpResize($source, $dest, $maxWidth = 0, $maxHeight = 0, $quality=null){
+	function imgSharpResize($source, $dest, $maxWidth = 0, $maxHeight = 0, $quality=null, bool $forceSaveWithQuality){
 		$infos = $this->readSourceImage($source, $dest);
 		if (!$infos) return $source;
 
@@ -1570,9 +1574,35 @@ SVG;
 		  AND $srcWidth<=$destWidth
 		  AND $srcHeight<=$destHeight){
 
-			$infos['format_dest'] = $srcExt;
-			$infos['fichier_dest'] = $destination.".".$srcExt;
-			@copy($srcFile, $infos['fichier_dest']);
+			if (is_null($quality)
+			  or !$forceSaveWithQuality
+			  or ($this->maxImagePxGDMemoryLimit AND $srcWidth*$srcHeight>$this->maxImagePxGDMemoryLimit)) {
+				$infos['format_dest'] = $srcExt;
+				$infos['fichier_dest'] = $destination.".".$srcExt;
+				@copy($srcFile, $infos['fichier_dest']);
+			}
+			else {
+				$destExt = $infos['format_dest'];
+				if (!$destExt){
+					throw new Exception("No output extension for {$srcFile}");
+				}
+				$fonction_imagecreatefrom = $infos['fonction_imagecreatefrom'];
+
+				if (!function_exists($fonction_imagecreatefrom))
+					return $srcFile;
+
+				$srcImage = @$fonction_imagecreatefrom($srcFile);
+				if (!$srcImage){
+					throw new Exception("GD image creation fail for {$srcFile}");
+				}
+
+				// save destination image
+				if (!$this->saveGDImage($srcImage, $infos, $quality)){
+					throw new Exception("Unable to write ".$infos['fichier_dest'].", check write right of $dest");
+				}
+
+				ImageDestroy($srcImage);
+			}
 
 		}
 		else {
