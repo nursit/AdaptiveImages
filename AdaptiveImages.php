@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.3.0
+ * @version    2.3.1
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -520,11 +520,13 @@ JS;
 	 *   true to force immediate image building if not existing or if too old
 	 * @param int $quality
 	 *   to set an output image quality outside the predefined preset
+	 * @param bool $forceQuality
+	 *   to force a read/save on the original image even if not resized to ensure quality applied
 	 * @return string
 	 *   name of image file
 	 * @throws Exception
 	 */
-	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force=false, $quality=null){
+	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force=false, $quality=null, $forceQuality = false){
 		$dir_dest = $this->destDirectory."$wkpt/$x/";
 		$dest = $dir_dest . $this->adaptedSrcToURL($src);
 
@@ -541,12 +543,12 @@ JS;
 		if (!$force)
 			return $dest;
 
-		$forceSave = false;
 		if (is_null($quality)){
 			$quality = $this->qualityFromX(intval($x));
+			$forceQuality = (intval($x)>10 ? true : false);
 		}
 
-		$i = $this->imgSharpResize($src,$dest,$wx,10000,$quality, $forceSave);
+		$i = $this->imgSharpResize($src,$dest,$wx,10000,$quality, $forceQuality);
 		if ($i AND $i!==$dest AND $i!==$src){
 			throw new Exception("Error in imgSharpResize: return \"$i\" whereas \"$dest\" expected");
 		}
@@ -743,7 +745,7 @@ JS;
 					// adapter la qualite a la vraie resolution si l'image n'est pas aussi grande que souhaitee
 					$ratio = min(1.0, intval($is_mobile ? $wmobile: $w) / $wkx);
 					$quality = $this->qualityFromX(round($x * 10 * $ratio));
-					$images[$wk][$k] = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wk, $wkx, $k, $extension, false, $quality);
+					$images[$wk][$k] = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wk, $wkx, $k, $extension, false, $quality, $x!==1);
 				}
 			}
 			if ($wk<=$maxWidth1x
