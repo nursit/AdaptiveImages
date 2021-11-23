@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.3.1
+ * @version    2.3.2
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -723,6 +723,7 @@ JS;
 		$images = array();
 		if ($w<end($bkpt)) {
 			$bkpt[] = $w;
+			sort($bkpt);
 		}
 
 		// build images (or at least URLs of images) on breakpoints
@@ -1256,7 +1257,7 @@ SVG;
 				if (!$srcHeight)	$hauteur_img[$source] = $srcHeight = $srcsize[1];
 			}
 		}
-		return array($srcWidth,$srcHeight);
+		return array(intval($srcWidth),intval($srcHeight));
 	}
 
 
