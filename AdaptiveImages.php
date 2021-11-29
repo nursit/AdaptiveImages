@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.3.2
+ * @version    2.3.3
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -1605,6 +1605,11 @@ SVG;
 				$srcImage = @$fonction_imagecreatefrom($srcFile);
 				if (!$srcImage){
 					throw new Exception("GD image creation fail for {$srcFile}");
+				}
+
+				if ($destExt=="png"){
+					// keep transparency
+					@imagesavealpha($srcImage, true);
 				}
 
 				// save destination image
