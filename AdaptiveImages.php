@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.3.3
+ * @version    2.3.4
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -527,11 +527,13 @@ JS;
 	 *   to set an output image quality outside the predefined preset
 	 * @param bool $forceQuality
 	 *   to force a read/save on the original image even if not resized to ensure quality applied
+	 * @param bool $sharpResize
+	 *   to force a read/save on the original image even if not resized to ensure quality applied
 	 * @return string
 	 *   name of image file
 	 * @throws Exception
 	 */
-	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force = false, $quality = null, $forceQuality = false){
+	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force = false, $quality = null, $forceQuality = false, $sharpResize = true){
 		$dir_dest = $this->destDirectory . "$wkpt/$x/";
 		$dest = $dir_dest . $this->adaptedSrcToURL($src);
 
@@ -556,7 +558,7 @@ JS;
 			$forceQuality = (intval($x)>10 ? true : false);
 		}
 
-		$i = $this->imgSharpResize($src, $dest, $wx, 10000, $quality, $forceQuality);
+		$i = $this->imgResize($src, $dest, $wx, 10000, $quality, $forceQuality, $sharpResize);
 		if ($i and $i!==$dest and $i!==$src){
 			throw new Exception("Error in imgSharpResize: return \"$i\" whereas \"$dest\" expected");
 		}
@@ -983,11 +985,13 @@ JS;
 
 		// embed fallback as a DATA URI if not more than 32ko
 		$fallback_file = $this->base64EmbedFile($fallback_file);
+
 		// if blur is requested, go through a svg wrapper as browsers doesnt support yet filter(url(...), blur(5px))
 		if (strpos($fallback_file, "image/svg")===false and $fallback_class==='blur'){
+			$blurstd = round($width / 100, 1);
 			$svg_wrapper = <<<SVG
 <svg viewBox="0 0 $width $height" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<filter id="blur"><feGaussianBlur stdDeviation="7 7" edgeMode="duplicate" /><feComponentTransfer><feFuncA type="discrete" tableValues="1 1" /></feComponentTransfer></filter>
+<filter id="blur"><feGaussianBlur stdDeviation="$blurstd $blurstd" edgeMode="duplicate" /><feComponentTransfer><feFuncA type="discrete" tableValues="1 1" /></feComponentTransfer></filter>
 <image filter="url(#blur)" width="$width" height="$height" xlink:href="$fallback_file" preserveAspectRatio="none"/></svg>
 SVG;
 			$fallback_file = 'data:' . $this->extensionToMimeType('svg') . ';base64,' . base64_encode($svg_wrapper);
@@ -1583,11 +1587,12 @@ SVG;
 	 * @param int $maxHeight
 	 * @param int|null $quality
 	 * @param bool $forceSaveWithQuality
+	 * @param bool $sharpen
 	 * @return string
 	 *   file name of the resized image (or source image if fail)
 	 * @throws Exception
 	 */
-	function imgSharpResize($source, $dest, $maxWidth = 0, $maxHeight = 0, $quality = null, bool $forceSaveWithQuality = false){
+	function imgResize($source, $dest, $maxWidth = 0, $maxHeight = 0, $quality = null, bool $forceSaveWithQuality = false, $sharpen = true){
 		$infos = $this->readSourceImage($source, $dest);
 		if (!$infos){
 			return $source;
@@ -1709,7 +1714,7 @@ SVG;
 				$ok = ImageCopyResized($destImage, $srcImage, 0, 0, 0, 0, $destWidth, $destHeight, $srcWidth, $srcHeight);
 			}
 
-			if ($destExt=="jpg" && function_exists('imageconvolution')){
+			if ($sharpen and $destExt=="jpg" && function_exists('imageconvolution')){
 				$intSharpness = $this->computeSharpCoeff($srcWidth, $destWidth);
 				$arrMatrix = array(
 					array(-1, -2, -1),
