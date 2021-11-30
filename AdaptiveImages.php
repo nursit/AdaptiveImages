@@ -852,13 +852,16 @@ JS;
 			}
 		}
 
-		// limit $src image width to $maxWidth1x for old IE
-		$src = $this->processBkptImage($src, $maxWidth1x, $maxWidth1x, '10x', $extension, true);
-		list($w, $h) = $this->imgSize($src);
-		$img = $this->setTagAttribute($img, "src", $this->filepath2URL($src));
-		$img = $this->setTagAttribute($img, "width", $w);
-		$img = $this->setTagAttribute($img, "height", $h);
-
+		// if not using srcset limit $src image width to $maxWidth1x for old IE
+		// with srcet it doesnt matters, no fallback for old IEs neither small default image
+		// so avoid this useless image building
+		if ($this->markupMethod !== 'srcset'){
+			$src = $this->processBkptImage($src, $maxWidth1x, $maxWidth1x, '10x', $extension, true);
+			list($w, $h) = $this->imgSize($src);
+			$img = $this->setTagAttribute($img, "src", $this->filepath2URL($src));
+			$img = $this->setTagAttribute($img, "width", $w);
+			$img = $this->setTagAttribute($img, "height", $h);
+		}
 		// ok, now build the markup
 		return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x, $sizes, $asBackground);
 	}
@@ -1584,7 +1587,7 @@ SVG;
 	 *   file name of the resized image (or source image if fail)
 	 * @throws Exception
 	 */
-	function imgSharpResize($source, $dest, $maxWidth = 0, $maxHeight = 0, $quality = null, bool $forceSaveWithQuality){
+	function imgSharpResize($source, $dest, $maxWidth = 0, $maxHeight = 0, $quality = null, bool $forceSaveWithQuality = false){
 		$infos = $this->readSourceImage($source, $dest);
 		if (!$infos){
 			return $source;
