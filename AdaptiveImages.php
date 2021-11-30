@@ -58,7 +58,7 @@ class AdaptiveImages {
 	 * Breakpoints width for image generation
 	 * @var array
 	 */
-	protected $defaultBkpts = array(480,960,1440);
+	protected $defaultBkpts = array(480, 960, 1440);
 
 	/**
 	 * Maximum display width for images
@@ -102,7 +102,7 @@ class AdaptiveImages {
 	 * Allowed format images to be adapted
 	 * @var array
 	 */
-	protected $acceptedFormats = array('gif','png','jpeg','jpg');
+	protected $acceptedFormats = array('gif', 'png', 'jpeg', 'jpg');
 
 	/**
 	 * directory for storing adaptive images
@@ -156,9 +156,9 @@ class AdaptiveImages {
 	 * @throws InvalidArgumentException
 	 */
 	public function __get($property){
-		if(!property_exists($this,$property) OR $property=="instances") {
-      throw new InvalidArgumentException("Property {$property} doesn't exist");
-    }
+		if (!property_exists($this, $property) or $property=="instances"){
+			throw new InvalidArgumentException("Property {$property} doesn't exist");
+		}
 		return $this->{$property};
 	}
 
@@ -170,22 +170,22 @@ class AdaptiveImages {
 	 * @throws InvalidArgumentException
 	 */
 	public function __set($property, $value){
-		if(!property_exists($this,$property) OR $property=="instances") {
-      throw new InvalidArgumentException("Property {$property} doesn't exist");
-    }
-		if (in_array($property,array("nojsPngGifProgressiveRendering","onDemandImages","lazyload","alwaysIntrinsic"))){
-			if (!is_bool($value))
+		if (!property_exists($this, $property) or $property=="instances"){
+			throw new InvalidArgumentException("Property {$property} doesn't exist");
+		}
+		if (in_array($property, array("nojsPngGifProgressiveRendering", "onDemandImages", "lazyload", "alwaysIntrinsic"))){
+			if (!is_bool($value)){
 				throw new InvalidArgumentException("Property {$property} needs a bool value");
-		}
-		elseif (in_array($property,array("lowsrcJpgBgColor","destDirectory","thumbnailGeneratorCallback","markupMethod"))){
-			if (!is_string($value))
+			}
+		} elseif (in_array($property, array("lowsrcJpgBgColor", "destDirectory", "thumbnailGeneratorCallback", "markupMethod"))) {
+			if (!is_string($value)){
 				throw new InvalidArgumentException("Property {$property} needs a string value");
-		}
-		elseif (in_array($property,array("defaultBkpts","acceptedFormats"))){
-			if (!is_array($value))
+			}
+		} elseif (in_array($property, array("defaultBkpts", "acceptedFormats"))) {
+			if (!is_array($value)){
 				throw new InvalidArgumentException("Property {$property} needs an array value");
-		}
-		elseif (!is_int($value)){
+			}
+		} elseif (!is_int($value)) {
 			throw new InvalidArgumentException("Property {$property} needs an int value");
 		}
 		if ($property=="defaultBkpts"){
@@ -198,8 +198,8 @@ class AdaptiveImages {
 	/**
 	 * Disable cloning
 	 */
-	protected function __clone() {
-	 trigger_error("Cannot clone a singleton class", E_USER_ERROR);
+	protected function __clone(){
+		trigger_error("Cannot clone a singleton class", E_USER_ERROR);
 	}
 
 	/**
@@ -207,12 +207,12 @@ class AdaptiveImages {
 	 *
 	 * @return AdaptiveImages
 	 */
-	static public function getInstance() {
-		$class_name = (function_exists("get_called_class")?get_called_class():"AdaptiveImages");
-		if(!array_key_exists($class_name, self::$instances)) {
-      self::$instances[$class_name] = new $class_name();
-    }
-    return self::$instances[$class_name];
+	static public function getInstance(){
+		$class_name = (function_exists("get_called_class") ? get_called_class() : "AdaptiveImages");
+		if (!array_key_exists($class_name, self::$instances)){
+			self::$instances[$class_name] = new $class_name();
+		}
+		return self::$instances[$class_name];
 	}
 
 	/**
@@ -234,8 +234,9 @@ class AdaptiveImages {
 	 */
 	protected function URL2filepath($url){
 		// remove timestamp on URL
-		if (($p=strpos($url,'?'))!==FALSE)
-			$url=substr($url,0,$p);
+		if (($p = strpos($url, '?'))!==FALSE){
+			$url = substr($url, 0, $p);
+		}
 
 		return $url;
 	}
@@ -249,10 +250,11 @@ class AdaptiveImages {
 	 * @param bool $relative
 	 * @return string
 	 */
-	protected function filepath2URL($filepath, $relative=false){
+	protected function filepath2URL($filepath, $relative = false){
 		// be carefull : maybe file doesn't exists yet (On demand generation)
-		if ($t = @filemtime($filepath))
+		if ($t = @filemtime($filepath)){
 			$filepath = "$filepath?$t";
+		}
 		return $filepath;
 	}
 
@@ -268,7 +270,7 @@ class AdaptiveImages {
 	 * @param string $originalStyle
 	 * @return mixed
 	 */
-	protected function imgMarkupHook(&$markup,$originalClass,$originalStyle){
+	protected function imgMarkupHook(&$markup, $originalClass, $originalStyle){
 		return $markup;
 	}
 
@@ -281,11 +283,13 @@ class AdaptiveImages {
 	 */
 	protected function adaptedSrcToURL($src){
 		$url = $this->filepath2URL($src, true);
-		if (($p=strpos($url,'?'))!==FALSE)
-			$url=substr($url,0,$p);
+		if (($p = strpos($url, '?'))!==FALSE){
+			$url = substr($url, 0, $p);
+		}
 		// avoid / starting url : replace / by root/
-		if (strncmp($url,"/",1)==0)
-			$url = "root".$url;
+		if (strncmp($url, "/", 1)==0){
+			$url = "root" . $url;
+		}
 		return $url;
 	}
 
@@ -297,8 +301,9 @@ class AdaptiveImages {
 	 */
 	protected function adaptedURLToSrc($url){
 		// replace root/ by /
-		if (strncmp($url,"root/",5)==0)
-			$url = substr($url,4);
+		if (strncmp($url, "root/", 5)==0){
+			$url = substr($url, 4);
+		}
 		$src = $this->URL2filepath($url);
 		return $src;
 	}
@@ -317,20 +322,20 @@ class AdaptiveImages {
 	 * @return string
 	 *  HTML modified page
 	 */
-	public function adaptHTMLPage($html,$maxWidth1x=null,$bkpt=null){
+	public function adaptHTMLPage($html, $maxWidth1x = null, $bkpt = null){
 		// adapt all images that need it, if not already
 		$html = $this->adaptHTMLPart($html, $maxWidth1x, $bkpt);
 
 		// if there is adapted images in the page, add the necessary CSS and JS
-		if (strpos($html,"adapt-img-wrapper")!==false){
+		if (strpos($html, "adapt-img-wrapper")!==false){
 			$ins_style = "";
 			// collect all adapt-img <style> in order to put it in the <head>
-			preg_match_all(",(<style[^>]*adaptive[^>]*>(.*)</style>),Ums",$html,$matches);
+			preg_match_all(",(<style[^>]*adaptive[^>]*>(.*)</style>),Ums", $html, $matches);
 			if (count($matches[2])){
-				$html = str_replace($matches[1],"",$html);
-				$ins_style .= "\n<style>".implode("\n",$matches[2])."\n</style>";
+				$html = str_replace($matches[1], "", $html);
+				$ins_style .= "\n<style>" . implode("\n", $matches[2]) . "\n</style>";
 				// in case of this was only including <style>
-				$html = str_replace("<!--[if !IE]><!--><!--<![endif]-->","",$html);
+				$html = str_replace("<!--[if !IE]><!--><!--<![endif]-->", "", $html);
 			}
 
 			// Common styles for all adaptive images during loading
@@ -338,15 +343,15 @@ class AdaptiveImages {
 			$noscript = "";
 			switch ($this->markupMethod) {
 				case 'srcset':
-					$minwidthdesktop = $this->maxWidthMobileVersion + 0.5;
+					$minwidthdesktop = $this->maxWidthMobileVersion+0.5;
 					$base_style = "<style type='text/css'>"
-					."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}"
-					.".adapt-img-wrapper {display:inline-block;max-width:100%;position:relative;background-position:center;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
-					.".adapt-img-wrapper.intrinsic{display:block}.adapt-img-wrapper.intrinsic::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic img{position:absolute;left:0;top:0;width:100%;height:auto;}"
-					."@media (min-width:{$minwidthdesktop}px){.adapt-img-wrapper.intrinsic-desktop{display:block}.adapt-img-wrapper.intrinsic-desktop::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic-desktop img{position:absolute;left:0;top:0;width:100%;height:auto;}}"
-					.".adapt-img-background{width:100%;height:0}"
-					."@media print{html .adapt-img-wrapper{background:none}"
-					."</style>\n";
+						. "img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}"
+						. ".adapt-img-wrapper {display:inline-block;max-width:100%;position:relative;background-position:center;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
+						. ".adapt-img-wrapper.intrinsic{display:block}.adapt-img-wrapper.intrinsic::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic img{position:absolute;left:0;top:0;width:100%;height:auto;}"
+						. "@media (min-width:{$minwidthdesktop}px){.adapt-img-wrapper.intrinsic-desktop{display:block}.adapt-img-wrapper.intrinsic-desktop::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic-desktop img{position:absolute;left:0;top:0;width:100%;height:auto;}}"
+						. ".adapt-img-background{width:100%;height:0}"
+						. "@media print{html .adapt-img-wrapper{background:none}"
+						. "</style>\n";
 					// JS that evaluate connection speed and add a aislow class on <html> if slow connection
 					// and onload JS that adds CSS to finish rendering
 					$async_style = "picture.adapt-img-wrapper{background-size:0;}";
@@ -359,13 +364,13 @@ JS;
 					break;
 				case '3layers':
 				default:
-					$base_style = "<style type='text/css'>"."img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}img.adapt-img.blur{filter:blur(5px)}"
-					.".adapt-img-wrapper,.adapt-img-wrapper::after{display:block;max-width:100%;position:relative;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
-					.".adapt-img-background{width:100%;height:0}.adapt-img-background::after{display:none;width:100%;height:0;}"
-					."html body .adapt-img-wrapper.lazy,html.lazy body .adapt-img-wrapper,html body .adapt-img-wrapper.lazy::after,html.lazy body .adapt-img-wrapper::after{background-image:none}"
-					.".adapt-img-wrapper::after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
-					."@media print{html .adapt-img-wrapper{background:none}html .adapt-img-wrapper img {opacity:1}html .adapt-img-wrapper::after{display:none}}"
-					."</style>\n";
+					$base_style = "<style type='text/css'>" . "img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}img.adapt-img.blur{filter:blur(5px)}"
+						. ".adapt-img-wrapper,.adapt-img-wrapper::after{display:block;max-width:100%;position:relative;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
+						. ".adapt-img-background{width:100%;height:0}.adapt-img-background::after{display:none;width:100%;height:0;}"
+						. "html body .adapt-img-wrapper.lazy,html.lazy body .adapt-img-wrapper,html body .adapt-img-wrapper.lazy::after,html.lazy body .adapt-img-wrapper::after{background-image:none}"
+						. ".adapt-img-wrapper::after{position:absolute;top:0;left:0;right:0;bottom:0;content:\"\"}"
+						. "@media print{html .adapt-img-wrapper{background:none}html .adapt-img-wrapper img {opacity:1}html .adapt-img-wrapper::after{display:none}}"
+						. "</style>\n";
 					// JS that evaluate connection speed and add a aislow class on <html> if slow connection
 					// and onload JS that adds CSS to finish rendering
 					$async_style = "html img.adapt-img{opacity:0.01}html .adapt-img-wrapper::after{display:none;}";
@@ -375,25 +380,25 @@ JS;
 function adaptImgFix(d){var e=window.getComputedStyle(d.parentNode).backgroundImage.replace(/\W?\)$/,"").replace(/^url\(\W?|/,"");d.src=e&&"none"!=e?e:d.src}(function(){function d(a){var b=document.documentElement;b.className=b.className+" "+a}function e(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}document.createElement("picture");adaptImgLazy&&d("lazy");/android 2[.]/i.test(navigator.userAgent.toLowerCase())&&d("android2");var c=!1;if("undefined"!==typeof window.performance)c=window.performance.timing,c=(c=~~(adaptImgDocLength/(c.responseEnd-c.connectStart)))&&50>c;else{var f=navigator.connection||navigator.mozConnection||navigator.webkitConnection;"undefined"!==typeof f&&(c=3==f.type||4==f.type||/^[23]g$/.test(f.type))}c&&d("aislow");var h=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b);window.matchMedia||window.onbeforeprint||g()};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(h)}):e(h);var g=function(){for(var a=document.getElementsByClassName("adapt-img"),b=0;b<a.length;b++)adaptImgFix(a[b])};window.matchMedia&&window.matchMedia("print").addListener(function(a){g()});"undefined"!==typeof window.onbeforeprint&&(window.onbeforeprint=g)})();
 JS;
 					// alternative noscript if no js (to de-activate progressive rendering on PNG and GIF)
-					if (!$this->nojsPngGifProgressiveRendering)
+					if (!$this->nojsPngGifProgressiveRendering){
 						$noscript = "<noscript><style type='text/css'>.png img.adapt-img,.gif img.adapt-img{opacity:0.01} .adapt-img-wrapper.png::after,.adapt-img-wrapper.gif::after{display:none;}</style></noscript>";
+					}
 
 					break;
 			}
 			$length += strlen($html)+strlen($ins_style);
-			$ins = "<script type='text/javascript'>/*<![CDATA[*/var adaptImgDocLength=$length;adaptImgAsyncStyles=\"$async_style\";adaptImgLazy=".($this->lazyload?"true":"false").";{$js}/*]]>*/</script>\n";
+			$ins = "<script type='text/javascript'>/*<![CDATA[*/var adaptImgDocLength=$length;adaptImgAsyncStyles=\"$async_style\";adaptImgLazy=" . ($this->lazyload ? "true" : "false") . ";{$js}/*]]>*/</script>\n";
 			$ins .= $noscript;
 			$ins .= $ins_style;
 
 			// insert before first <script or <link
 			$ins = "$base_style<!--[if !IE]><!-->$ins\n<!--<![endif]-->\n";
-			if ($p = strpos($html,"<link")
-				or $p = strpos($html,"<script")
-				or $p = strpos($html,"</head")
-				or $p = strpos($html,"</body")) {
-				$html = substr_replace($html,$ins,$p,0);
-			}
-			else {
+			if ($p = strpos($html, "<link")
+				or $p = strpos($html, "<script")
+				or $p = strpos($html, "</head")
+				or $p = strpos($html, "</body")){
+				$html = substr_replace($html, $ins, $p, 0);
+			} else {
 				$html .= $ins;
 			}
 		}
@@ -415,51 +420,51 @@ JS;
 	 * @return string
 	 * @throws Exception
 	 */
-	public function adaptHTMLPart($html,$maxWidth1x=null,$bkpt=null,$asBackgroundOrSizes=false){
+	public function adaptHTMLPart($html, $maxWidth1x = null, $bkpt = null, $asBackgroundOrSizes = false){
 		$asBackground = false;
 		$sizes = null;
-		if ($asBackgroundOrSizes === true) {
+		if ($asBackgroundOrSizes===true){
 			$asBackground = true;
-		}
-		elseif(is_array($asBackgroundOrSizes) or is_string($asBackgroundOrSizes)) {
+		} elseif (is_array($asBackgroundOrSizes) or is_string($asBackgroundOrSizes)) {
 			$sizes = $asBackgroundOrSizes;
 		}
 
 		static $bkpts = array();
-		if (is_null($maxWidth1x) OR !intval($maxWidth1x))
+		if (is_null($maxWidth1x) or !intval($maxWidth1x)){
 			$maxWidth1x = $this->maxWidth1x;
+		}
 
 		if (is_null($bkpt)){
-			if ($maxWidth1x AND !isset($bkpts[$maxWidth1x])){
+			if ($maxWidth1x and !isset($bkpts[$maxWidth1x])){
 				$b = $this->defaultBkpts;
-				while (count($b) AND end($b)>$maxWidth1x) array_pop($b);
+				while (count($b) and end($b)>$maxWidth1x) array_pop($b);
 				// la largeur maxi affichee
-				if (!count($b) OR end($b)<$maxWidth1x) $b[] = $maxWidth1x;
+				if (!count($b) or end($b)<$maxWidth1x){
+					$b[] = $maxWidth1x;
+				}
 				$bkpts[$maxWidth1x] = $b;
 			}
-			$bkpt = (isset($bkpts[$maxWidth1x])?$bkpts[$maxWidth1x]:null);
-		}
-		else {
-			while (count($bkpt) AND end($bkpt)>$maxWidth1x) array_pop($bkpt);
+			$bkpt = (isset($bkpts[$maxWidth1x]) ? $bkpts[$maxWidth1x] : null);
+		} else {
+			while (count($bkpt) and end($bkpt)>$maxWidth1x) array_pop($bkpt);
 		}
 
 		$replace = array();
-		preg_match_all(",<img\s[^>]*>,Uims",$html,$matches,PREG_SET_ORDER);
+		preg_match_all(",<img\s[^>]*>,Uims", $html, $matches, PREG_SET_ORDER);
 		if (count($matches)){
-			foreach($matches as $m){
+			foreach ($matches as $m){
 				$ri = $this->processImgTag($m[0], $bkpt, $maxWidth1x, $sizes, $asBackground);
 				if ($ri!==$m[0]){
 					$replace[$m[0]] = $ri;
 				}
 			}
 			if (count($replace)){
-				$html = str_replace(array_keys($replace),array_values($replace),$html);
+				$html = str_replace(array_keys($replace), array_values($replace), $html);
 			}
 		}
 
 		return $html;
 	}
-
 
 
 	/**
@@ -477,21 +482,21 @@ JS;
 		try {
 			$mime = "";
 			$file = $this->processBkptImageFromPath($path, $mime);
-		}
-		catch (Exception $e){
+		} catch (Exception $e) {
 			$file = "";
 		}
 		if (!$file
-		  OR !$mime){
+			or !$mime){
 			http_status(404);
 			throw new InvalidArgumentException("Unable to find {$path} image");
 		}
 
-		header("Content-Type: ". $mime);
+		header("Content-Type: " . $mime);
 		#header("Expires: 3600"); // set expiration time
 
-		if ($cl = filesize($file))
-			header("Content-Length: ". $cl);
+		if ($cl = filesize($file)){
+			header("Content-Length: " . $cl);
+		}
 
 		readfile($file);
 	}
@@ -526,34 +531,37 @@ JS;
 	 *   name of image file
 	 * @throws Exception
 	 */
-	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force=false, $quality=null, $forceQuality = false){
-		$dir_dest = $this->destDirectory."$wkpt/$x/";
+	protected function processBkptImage($src, $wkpt, $wx, $x, $extension, $force = false, $quality = null, $forceQuality = false){
+		$dir_dest = $this->destDirectory . "$wkpt/$x/";
 		$dest = $dir_dest . $this->adaptedSrcToURL($src);
 
-		if (($exist=file_exists($dest)) AND filemtime($dest)>=filemtime($src))
+		if (($exist = file_exists($dest)) and filemtime($dest)>=filemtime($src)){
 			return $dest;
+		}
 
-		$force = ($force?true:!$this->onDemandImages);
+		$force = ($force ? true : !$this->onDemandImages);
 
 		// if file already exists but too old, delete it if we don't want to generate it now
 		// it will be generated on first request
-		if ($exist AND !$force)
+		if ($exist and !$force){
 			@unlink($dest);
+		}
 
-		if (!$force)
+		if (!$force){
 			return $dest;
+		}
 
 		if (is_null($quality)){
 			$quality = $this->qualityFromX(intval($x));
 			$forceQuality = (intval($x)>10 ? true : false);
 		}
 
-		$i = $this->imgSharpResize($src,$dest,$wx,10000,$quality, $forceQuality);
-		if ($i AND $i!==$dest AND $i!==$src){
+		$i = $this->imgSharpResize($src, $dest, $wx, 10000, $quality, $forceQuality);
+		if ($i and $i!==$dest and $i!==$src){
 			throw new Exception("Error in imgSharpResize: return \"$i\" whereas \"$dest\" expected");
 		}
 		if (!file_exists($i)){
-			throw new Exception("Error file \"$i\" not found: check the right to write in ".$this->destDirectory);
+			throw new Exception("Error file \"$i\" not found: check the right to write in " . $this->destDirectory);
 		}
 		return $i;
 	}
@@ -562,21 +570,21 @@ JS;
 	 * @param $x
 	 * @return int
 	 */
-	protected function qualityFromX($x) {
+	protected function qualityFromX($x){
 		$x = intval($x);
-		if ($x <= 10) {
+		if ($x<=10){
 			return $this->x10JpgQuality;
 		}
-		if ($x <= 15) {
-			if ($x === 15) {
+		if ($x<=15){
+			if ($x===15){
 				return $this->x15JpgQuality;
 			}
-			return intval(round($this->x10JpgQuality + ($x-10) / 5 * ($this->x15JpgQuality - $this->x10JpgQuality)));
+			return intval(round($this->x10JpgQuality+($x-10)/5*($this->x15JpgQuality-$this->x10JpgQuality)));
 		}
-		if ($x >= 20) {
+		if ($x>=20){
 			return $this->x20JpgQuality;
 		}
-		return intval(round($this->x15JpgQuality + ($x-15) / 5 * ($this->x20JpgQuality - $this->x15JpgQuality)));
+		return intval(round($this->x15JpgQuality+($x-15)/5*($this->x20JpgQuality-$this->x15JpgQuality)));
 	}
 
 	/**
@@ -591,17 +599,18 @@ JS;
 	 * @return string
 	 * @throws Exception
 	 */
-	protected function processBkptImageFromPath($URLPath,&$mime){
+	protected function processBkptImageFromPath($URLPath, &$mime){
 		$base = $this->destDirectory;
 		$path = $URLPath;
 		// if base path is provided, remove it
-		if (strncmp($path,$base,strlen($base))==0)
-			$path = substr($path,strlen($base));
+		if (strncmp($path, $base, strlen($base))==0){
+			$path = substr($path, strlen($base));
+		}
 
-		$path = explode("/",$path);
+		$path = explode("/", $path);
 		$wkpt = intval(array_shift($path));
 		$x = array_shift($path);
-		$url = implode("/",$path);
+		$url = implode("/", $path);
 
 		// translate URL part to file path
 		$src = $this->adaptedURLToSrc($url);
@@ -609,16 +618,16 @@ JS;
 		$parts = pathinfo($src);
 		$extension = strtolower($parts['extension']);
 		$mime = $this->extensionToMimeType($extension);
-		$dpi = array('10x'=>1,'15x'=>1.5,'20x'=>2);
+		$dpi = array('10x' => 1, '15x' => 1.5, '20x' => 2);
 
 		// check that path is well formed
 		if (!$wkpt
-		  OR !isset($dpi[$x])
-		  OR !file_exists($src)
-		  OR !$mime){
+			or !isset($dpi[$x])
+			or !file_exists($src)
+			or !$mime){
 			throw new Exception("Unable to build adapted image $URLPath");
 		}
-		$wx = intval(round($wkpt * $dpi[$x]));
+		$wx = intval(round($wkpt*$dpi[$x]));
 
 		$file = $this->processBkptImage($src, $wkpt, $wx, $x, $extension, true);
 		return $file;
@@ -649,50 +658,50 @@ JS;
 	 * @throws Exception
 	 */
 	protected function processImgTag($img, $bkpt, $maxWidth1x, $sizes = null, $asBackground = false){
-		if (!$img) return $img;
+		if (!$img){
+			return $img;
+		}
 
 		// don't do anyting if has adapt-img (already adaptive) or no-adapt-img class (no adaptative needed)
-		if (strpos($img, "adapt-img")!==false)
+		if (strpos($img, "adapt-img")!==false){
 			return $img;
-		if (is_null($bkpt) OR !is_array($bkpt))
+		}
+		if (is_null($bkpt) or !is_array($bkpt)){
 			$bkpt = $this->defaultBkpts;
+		}
 
-		list($w,$h) = $this->imgSize($img);
+		list($w, $h) = $this->imgSize($img);
 		$src = trim($this->tagAttribute($img, 'src'));
 		if (strlen($src)<1){
 			$src = $img;
-			$img = "<img src='".$src."' />";
+			$img = "<img src='" . $src . "' />";
 		}
 
 		$adapt = true;
 		// Don't do anything if img is to small or unknown width
-		if (!$w OR $w<=$this->minWidth1x) {
+		if (!$w or $w<=$this->minWidth1x){
 			$adapt = false;
-		}
-		else {
+		} else {
 			$srcMobile = $this->tagAttribute($img, 'data-src-mobile');
 
 			// don't do anything with data-URI images
-			if (strncmp($src, "data:", 5)==0) {
+			if (strncmp($src, "data:", 5)==0){
 				$adapt = false;
-			}
-			else {
+			} else {
 				$src = $this->URL2filepath($src);
 				// don't do anyting if we can't find file
-				if (!$src or !file_exists($src)) {
+				if (!$src or !file_exists($src)){
 					$adapt = false;
-				}
-				else {
+				} else {
 					// Don't do anything if img filesize is to small
-					$filesize=@filesize($src);
-					if ($filesize AND $filesize<$this->minFileSize) {
+					$filesize = @filesize($src);
+					if ($filesize and $filesize<$this->minFileSize){
 						$adapt = false;
-					}
-					else {
+					} else {
 						$parts = pathinfo($src);
 						$extension = $parts['extension'];
 						// don't do anyting if it's an animated GIF
-						if ($extension=="gif" AND $this->isAnimatedGif($src)) {
+						if ($extension=="gif" and $this->isAnimatedGif($src)){
 							$adapt = false;
 						}
 					}
@@ -700,8 +709,8 @@ JS;
 			}
 		}
 
-		if (!$adapt) {
-			if (!$asBackground) {
+		if (!$adapt){
+			if (!$asBackground){
 				return $img;
 			}
 
@@ -712,16 +721,16 @@ JS;
 			return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x, $sizes, $asBackground);
 		}
 
-		if ($srcMobile) {
+		if ($srcMobile){
 			$srcMobile = $this->URL2filepath($srcMobile);
 			list($wmobile, $hmobile) = @getimagesize($srcMobile);
-			if (!$wmobile) {
+			if (!$wmobile){
 				$wmobile = $w;
 			}
 		}
 
 		$images = array();
-		if ($w<end($bkpt)) {
+		if ($w<end($bkpt)){
 			$bkpt[] = $w;
 			sort($bkpt);
 		}
@@ -732,35 +741,37 @@ JS;
 		$dpi = array('10x' => 1, '15x' => 1.5, '20x' => 2);
 		$wk = 0;
 		foreach ($bkpt as $wk){
-			if ($wk>$w) break;
-			$is_mobile = (($srcMobile AND $wk<=$this->maxWidthMobileVersion) ? true : false);
-			if ($is_mobile) {
+			if ($wk>$w){
+				break;
+			}
+			$is_mobile = (($srcMobile and $wk<=$this->maxWidthMobileVersion) ? true : false);
+			if ($is_mobile){
 				// say we have a mobile version for width under
 				$images['maxWidthMobile'] = $this->maxWidthMobileVersion;
 			}
 			foreach ($dpi as $k => $x){
 				$wkx = intval(round($wk*$x));
-				if ($wkx>($is_mobile ? $wmobile: $w) and $x==1)
+				if ($wkx>($is_mobile ? $wmobile : $w) and $x==1){
 					$images[$wk][$k] = $is_mobile ? $srcMobile : $src;
-				else {
+				} else {
 					// adapter la qualite a la vraie resolution si l'image n'est pas aussi grande que souhaitee
-					$ratio = min(1.0, intval($is_mobile ? $wmobile: $w) / $wkx);
-					$quality = $this->qualityFromX(round($x * 10 * $ratio));
+					$ratio = min(1.0, intval($is_mobile ? $wmobile : $w)/$wkx);
+					$quality = $this->qualityFromX(round($x*10*$ratio));
 					$images[$wk][$k] = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wk, $wkx, $k, $extension, false, $quality, $x!==1);
 				}
 			}
 			if ($wk<=$maxWidth1x
-				AND ($wk<=$this->lowsrcWidth)
-				AND ($is_mobile OR !$srcMobile)){
+				and ($wk<=$this->lowsrcWidth)
+				and ($is_mobile or !$srcMobile)){
 				$fallback = $images[$wk]['10x'];
 				$wfallback = $wk;
 			}
 		}
 
-		if (!$asBackground) {
+		if (!$asBackground){
 
-			$fallback_directory = $this->destDirectory."fallback/";
-			if (!is_null($this->thumbnailGeneratorCallback) && is_callable($this->thumbnailGeneratorCallback)) {
+			$fallback_directory = $this->destDirectory . "fallback/";
+			if (!is_null($this->thumbnailGeneratorCallback) && is_callable($this->thumbnailGeneratorCallback)){
 				$options = [
 					'dir' => $fallback_directory,
 					'images' => $images,
@@ -770,7 +781,7 @@ JS;
 					'lowsrcJpgQuality' => $this->lowsrcJpgQuality,
 				];
 				$callback = $this->thumbnailGeneratorCallback;
-				if ($res = $callback($img, $options)) {
+				if ($res = $callback($img, $options)){
 					list($image, $class) = $res;
 					$images["fallback"] = $image;
 					$images["fallback_class"] = $class;
@@ -778,32 +789,32 @@ JS;
 			}
 
 			// default method for fallback generation if no external callback provided or if it failed
-			if (empty($images["fallback"])) {
+			if (empty($images["fallback"])){
 
 				// Build the fallback img : High-compressed JPG
 				// Start from the mobile version if available or from the larger version otherwise
 				if ($wk>$w
-					AND $w<$maxWidth1x
-					AND $w<$this->lowsrcWidth){
+					and $w<$maxWidth1x
+					and $w<$this->lowsrcWidth){
 					$fallback = $images[$w]['10x'];
 					$wfallback = $w;
 				}
 
 				$process_fallback = true;
-				if ($wfallback > $this->lowsrcWidth) {
+				if ($wfallback>$this->lowsrcWidth){
 
 					$bigger_mistake = $h;
 					$best_width = $this->lowsrcWidth;
 					// optimise this $wfallback to avoid a too big rounding mistake in the height thumbnail resizing
-					foreach ([1,1.25,1.333,1.5,1.666,1.75,2] as $x) {
-						$wfallback = round($x * $this->lowsrcWidth);
-						list($fw,$fh) = $this->computeImageSize($w, $h, $wfallback,10000);
-						$mistake = abs(($h - ($fh * $w / $fw)) * $maxWidth1x / $w);
-						if ($mistake < $bigger_mistake) {
+					foreach ([1, 1.25, 1.333, 1.5, 1.666, 1.75, 2] as $x){
+						$wfallback = round($x*$this->lowsrcWidth);
+						list($fw, $fh) = $this->computeImageSize($w, $h, $wfallback, 10000);
+						$mistake = abs(($h-($fh*$w/$fw))*$maxWidth1x/$w);
+						if ($mistake<$bigger_mistake){
 							$best_width = $wfallback;
 							$bigger_mistake = $mistake;
 							// if less than 1px of rounding mistake, let's take this size
-							if ($mistake < 1) {
+							if ($mistake<1){
 								break;
 							}
 						}
@@ -814,7 +825,7 @@ JS;
 					$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
 					$fallback = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wfallback, $wfallback, '10x', $extension, true, $q);
 					// if it's already a jpg nothing more to do here, otherwise double compress produce artefacts
-					if ($extension === 'jpg') {
+					if ($extension==='jpg'){
 						$process_fallback = false;
 					}
 				}
@@ -827,27 +838,26 @@ JS;
 					$this->processBkptImageFromPath($fallback, $mime);
 				}
 
-				if ($process_fallback) {
+				if ($process_fallback){
 					$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
 					$images["fallback"] = $this->img2JPG($fallback, $fallback_directory, $this->lowsrcJpgBgColor, $q);
-				}
-				else {
+				} else {
 					$infos = $this->readSourceImage($fallback, $fallback_directory, 'jpg');
-					if ($infos['creer']) {
+					if ($infos['creer']){
 						@copy($fallback, $infos["fichier_dest"]);
 					}
-					$images["fallback"] =  $infos["fichier_dest"];
+					$images["fallback"] = $infos["fichier_dest"];
 				}
 				$images["fallback_class"] = 'blur';
 			}
 		}
 
 		// limit $src image width to $maxWidth1x for old IE
-		$src = $this->processBkptImage($src,$maxWidth1x,$maxWidth1x,'10x',$extension,true);
-		list($w,$h) = $this->imgSize($src);
-		$img = $this->setTagAttribute($img,"src",$this->filepath2URL($src));
-		$img = $this->setTagAttribute($img,"width",$w);
-		$img = $this->setTagAttribute($img,"height",$h);
+		$src = $this->processBkptImage($src, $maxWidth1x, $maxWidth1x, '10x', $extension, true);
+		list($w, $h) = $this->imgSize($src);
+		$img = $this->setTagAttribute($img, "src", $this->filepath2URL($src));
+		$img = $this->setTagAttribute($img, "width", $w);
+		$img = $this->setTagAttribute($img, "height", $h);
 
 		// ok, now build the markup
 		return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x, $sizes, $asBackground);
@@ -893,7 +903,7 @@ JS;
 	 * @param bool $asBackground
 	 * @return string
 	 */
-	protected function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $sizes=null, $asBackground = false){
+	protected function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $sizes = null, $asBackground = false){
 		$class = $this->tagAttribute($img, "class");
 		if (!$width or strpos($class, "adapt-img")!==false){
 			return $img;
@@ -919,12 +929,12 @@ JS;
 		}
 
 		$maxWidthMobile = null;
-		if (isset($bkptImages['maxWidthMobile'])) {
+		if (isset($bkptImages['maxWidthMobile'])){
 			$maxWidthMobile = $bkptImages['maxWidthMobile'];
 			unset($bkptImages['maxWidthMobile']);
 		}
 
-		if (!$asBackground and $this->markupMethod === 'srcset') {
+		if (!$asBackground and $this->markupMethod==='srcset'){
 			return $this->imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile, $sizes);
 		}
 
@@ -956,33 +966,32 @@ JS;
 	 * @param string|array $sizes
 	 * @return string
 	 */
-	protected function imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile=null, $sizes = null){
-		$originalClass = $class = $this->tagAttribute($img,"class");
+	protected function imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile = null, $sizes = null){
+		$originalClass = $class = $this->tagAttribute($img, "class");
 		$intrinsic = "";
-		if (strpos(" $class "," intrinsic ") !== false) {
+		if (strpos(" $class ", " intrinsic ")!==false){
 			$intrinsic = " intrinsic";
-		}
-		elseif ($this->alwaysIntrinsic) {
+		} elseif ($this->alwaysIntrinsic) {
 			$intrinsic = " intrinsic";
 			$class = trim("$class intrinsic");
 		}
 
-		$cid = "c".crc32(serialize($bkptImages));
+		$cid = "c" . crc32(serialize($bkptImages));
 
 		// embed fallback as a DATA URI if not more than 32ko
 		$fallback_file = $this->base64EmbedFile($fallback_file);
 		// if blur is requested, go through a svg wrapper as browsers doesnt support yet filter(url(...), blur(5px))
-		if (strpos($fallback_file, "image/svg") === false and $fallback_class==='blur') {
+		if (strpos($fallback_file, "image/svg")===false and $fallback_class==='blur'){
 			$svg_wrapper = <<<SVG
 <svg viewBox="0 0 $width $height" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <filter id="blur"><feGaussianBlur stdDeviation="7 7" edgeMode="duplicate" /><feComponentTransfer><feFuncA type="discrete" tableValues="1 1" /></feComponentTransfer></filter>
 <image filter="url(#blur)" width="$width" height="$height" xlink:href="$fallback_file" preserveAspectRatio="none"/></svg>
 SVG;
-			$fallback_file = 'data:'.$this->extensionToMimeType('svg').';base64,'.base64_encode($svg_wrapper);
+			$fallback_file = 'data:' . $this->extensionToMimeType('svg') . ';base64,' . base64_encode($svg_wrapper);
 		}
 
 		$srcset = array();
-		if ($maxWidthMobile) {
+		if ($maxWidthMobile){
 			$srcset['mobile'] = array(
 				'20x' => array(), // est-ce qu'on veut envoyer du mobile en 2x ?
 				'15x' => array(), // est-ce qu'on veut envoyer du mobile en 1.5x ?
@@ -997,37 +1006,36 @@ SVG;
 		);
 		$default_file = "";
 
-		foreach ($bkptImages as $w=>$files){
-			foreach($files as $kx=>$file){
+		foreach ($bkptImages as $w => $files){
+			foreach ($files as $kx => $file){
 				$srcset_key = 'all';
-				if ($maxWidthMobile and $w<=$maxWidthMobile) {
+				if ($maxWidthMobile and $w<=$maxWidthMobile){
 					$srcset_key = 'mobile';
 				}
 				if (isset($srcset[$srcset_key][$kx])){
 					$url = $this->filepath2URL($file);
-					$ww = round($w * intval($kx) / 10);
+					$ww = round($w*intval($kx)/10);
 					$srcset[$srcset_key][$kx][] = "$url {$ww}w";
 				}
 			}
 			// set the default src : will be the largest 1x file smaller than the max-width
-			if (isset($files['10x']) and (!$default_file or $w <= $maxWidth1x)) {
+			if (isset($files['10x']) and (!$default_file or $w<=$maxWidth1x)){
 				$default_file = $files['10x'];
 			}
 		}
 
 		// Media-Queries
 		$style = "";
-		$originalStyle = $this->tagAttribute($img,"style");
+		$originalStyle = $this->tagAttribute($img, "style");
 		if ($intrinsic){
-			$ratio = round($height/$width * 100,2);
+			$ratio = round($height/$width*100, 2);
 			// if there is a mobile variation, set the intrinsic only in desktop version, cause the mobile image could have different ratio
 			// moreover, the source switch maybe not synchronized with the intrinsic ratio switch
-			if ($maxWidthMobile) {
+			if ($maxWidthMobile){
 				$intrinsic = " intrinsic-desktop";
-				$minWidthDesktop = $maxWidthMobile + 0.5;
+				$minWidthDesktop = $maxWidthMobile+0.5;
 				$style .= "@media (min-width: {$minWidthDesktop}px){.intrinsic-desktop.{$cid}::before {padding-bottom:{$ratio}%}}";
-			}
-			else {
+			} else {
 				$style .= ".intrinsic.{$cid}::before {padding-bottom:{$ratio}%}";
 			}
 		}
@@ -1039,64 +1047,63 @@ SVG;
 		$sizes_rule = array();
 		$default_size = false;
 		$need_max_size = true;
-		if (is_string($sizes)) {
+		if (is_string($sizes)){
 			$sizes = explode(',', $sizes);
 			$sizes = array_map('trim', $sizes);
 		}
-		if (is_array($sizes)) {
-			while(count($sizes)) {
+		if (is_array($sizes)){
+			while (count($sizes)){
 				$s = array_shift($sizes);
 				$sizes_rule[] = $s;
-				if (strpos($s, "(") === false and intval(trim($s))) {
+				if (strpos($s, "(")===false and intval(trim($s))){
 					$default_size = intval(trim($s));
 				}
-				if (strpos($s, "min-width") !== false and strpos($s, "max-width") === false) {
+				if (strpos($s, "min-width")!==false and strpos($s, "max-width")===false){
 					$need_max_size = false;
 				}
 			}
 		}
 		// set a defaut size rule if not provided (one without media query)
-		if (!$default_size) {
+		if (!$default_size){
 			$default_size = 100;
 			$sizes_rule[] = "{$default_size}vw";
 		}
-		if ($need_max_size) {
+		if ($need_max_size){
 			// set the max-size for super large screens
-			$maxScreenWidth = intval(ceil($maxWidth1x * 100 / $default_size));
+			$maxScreenWidth = intval(ceil($maxWidth1x*100/$default_size));
 			array_unshift($sizes_rule, "(min-width: {$maxScreenWidth}px) {$maxWidth1x}px");
 		}
 
 		$sizes_rule = implode(', ', $sizes_rule);
 
 		$sources = array();
-		foreach ($srcset as $dest=>$srcset_dest) {
-			if ($dest === 'mobile') {
+		foreach ($srcset as $dest => $srcset_dest){
+			if ($dest==='mobile'){
 				$mq_max_width = "(max-width:{$maxWidthMobile}px) and ";
-			}
-			else {
+			} else {
 				$mq_max_width = "";
 			}
-			foreach ($srcset_dest as $kx => $files) {
+			foreach ($srcset_dest as $kx => $files){
 				$files = implode(', ', $files);
 				$dp = intval($kx)/10;
 				$sources[] = "<source media=\"{$mq_max_width}(-webkit-min-device-pixel-ratio: {$dp}), {$mq_max_width}(min-resolution: {$dp}dppx)\" srcset=\"$files\" sizes=\"$sizes_rule\" >";
 			}
 		}
-		$sources = "<!--[if IE 9]><video style=\"display: none;\"><![endif]-->".implode("",$sources)."<!--[if IE 9]></video><![endif]-->";
+		$sources = "<!--[if IE 9]><video style=\"display: none;\"><![endif]-->" . implode("", $sources) . "<!--[if IE 9]></video><![endif]-->";
 
-		$img = $this->setTagAttribute($img,"src",$this->filepath2URL($default_file));
-		$img = $this->setTagAttribute($img,"class",trim("adapt-img $class"));
-		if ($srcset_base) {
-			$img = $this->setTagAttribute($img,"srcset",$srcset_base);
+		$img = $this->setTagAttribute($img, "src", $this->filepath2URL($default_file));
+		$img = $this->setTagAttribute($img, "class", trim("adapt-img $class"));
+		if ($srcset_base){
+			$img = $this->setTagAttribute($img, "srcset", $srcset_base);
 		}
-		$img = $this->setTagAttribute($img,"sizes",$sizes_rule);
+		$img = $this->setTagAttribute($img, "sizes", $sizes_rule);
 
 		// markup can be adjusted in hook, depending on style and class
-		$markup = "<picture class=\"adapt-img-wrapper{$intrinsic} $cid $extension\" style=\"".($intrinsic ? "max-width:{$maxWidth1x}px;":"")."background-image:url($fallback_file)\">\n$sources\n$img</picture>";
-		$markup = $this->imgMarkupHook($markup,$originalClass,$originalStyle);
+		$markup = "<picture class=\"adapt-img-wrapper{$intrinsic} $cid $extension\" style=\"" . ($intrinsic ? "max-width:{$maxWidth1x}px;" : "") . "background-image:url($fallback_file)\">\n$sources\n$img</picture>";
+		$markup = $this->imgMarkupHook($markup, $originalClass, $originalStyle);
 
-		if ($style) {
-			$markup .= "<!--[if !IE]><!--><style title='adaptive'>".$style."</style><!--<![endif]-->";
+		if ($style){
+			$markup .= "<!--[if !IE]><!--><style title='adaptive'>" . $style . "</style><!--<![endif]-->";
 		}
 		return $markup;
 	}
@@ -1125,21 +1132,21 @@ SVG;
 	 * @return string
 	 */
 	protected function imgAdaptive3LayersMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground = false){
-		$originalClass = $class = $this->tagAttribute($img,"class");
+		$originalClass = $class = $this->tagAttribute($img, "class");
 
-		$cid = "c".crc32(serialize($bkptImages));
+		$cid = "c" . crc32(serialize($bkptImages));
 		$style = "";
-		$img = $this->setTagAttribute($img,"class","adapt-img-ie $class");
+		$img = $this->setTagAttribute($img, "class", "adapt-img-ie $class");
 		$class = trim("$fallback_class $class");
 
 		// embed fallback as a DATA URI if not more than 32ko
 		$fallback_file = $this->base64EmbedFile($fallback_file);
 		// if it is not a vectorial image, encapsulate it in a svg to avoid the pixel rounding flickering
-		if (strpos($fallback_file, "image/svg") === false) {
+		if (strpos($fallback_file, "image/svg")===false){
 			$svg_wrapper = <<<SVG
 <svg viewBox="0 0 $width $height" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><image width="$width" height="$height" xlink:href="$fallback_file" preserveAspectRatio="none"/></svg>
 SVG;
-			$fallback_file = 'data:'.$this->extensionToMimeType('svg').';base64,'.base64_encode($svg_wrapper);
+			$fallback_file = 'data:' . $this->extensionToMimeType('svg') . ';base64,' . base64_encode($svg_wrapper);
 		}
 
 		$prev_width = 0;
@@ -1148,13 +1155,17 @@ SVG;
 		$lastw = end($lastw);
 		$wandroid = 0;
 		$islast = false;
-		foreach ($bkptImages as $w=>$files){
-			if ($w==$lastw) {$islast = true;}
-			if ($w<=$this->maxWidthMobileVersion) $wandroid = $w;
+		foreach ($bkptImages as $w => $files){
+			if ($w==$lastw){
+				$islast = true;
+			}
+			if ($w<=$this->maxWidthMobileVersion){
+				$wandroid = $w;
+			}
 			// use min-width and max-width in order to avoid override
 			if ($prev_width<$maxWidth1x){
-				$hasmax = (($islast OR $w>=$maxWidth1x)?false:true);
-				$mw = ($prev_width?"and (min-width:{$prev_width}px)":"").($hasmax?" and (max-width:{$w}px)":"");
+				$hasmax = (($islast or $w>=$maxWidth1x) ? false : true);
+				$mw = ($prev_width ? "and (min-width:{$prev_width}px)" : "") . ($hasmax ? " and (max-width:{$w}px)" : "");
 				$htmlsel = "html:not(.android2)";
 				$htmlsel = array(
 					'10x' => "$htmlsel",
@@ -1167,7 +1178,7 @@ SVG;
 				'15x' => "screen and (-webkit-min-device-pixel-ratio: 1.5) and (-webkit-max-device-pixel-ratio: 1.99) $mw,screen and (min--moz-device-pixel-ratio: 1.5) and (max--moz-device-pixel-ratio: 1.99) $mw",
 				'20x' => "screen and (-webkit-min-device-pixel-ratio: 2) $mw,screen and (min--moz-device-pixel-ratio: 2) $mw",
 			);
-			foreach($files as $kx=>$file){
+			foreach ($files as $kx => $file){
 				if (isset($mwdpi[$kx])){
 					$mw = $mwdpi[$kx];
 					$not = $htmlsel[$kx];
@@ -1187,32 +1198,30 @@ SVG;
 		}
 
 		// Media-Queries
-		$style .= implode("",$medias);
-		$originalStyle = $this->tagAttribute($img,"style");
+		$style .= implode("", $medias);
+		$originalStyle = $this->tagAttribute($img, "style");
 
-		if ($asBackground) {
+		if ($asBackground){
 			// if we just want a background image: a span with a class
-			$ratio = round(100 * $height/$width, 2);
-			$out = "<span class=\"adapt-img-wrapper adapt-img-background $cid $extension\" style='padding-bottom: {$ratio}%;'></span>\n<style>".$style."</style>";
-		}
-		else {
+			$ratio = round(100*$height/$width, 2);
+			$out = "<span class=\"adapt-img-wrapper adapt-img-background $cid $extension\" style='padding-bottom: {$ratio}%;'></span>\n<style>" . $style . "</style>";
+		} else {
 			$out = "<!--[if IE]>$img<![endif]-->\n";
 
-			$img = $this->setTagAttribute($img,"src",$fallback_file);
-			$img = $this->setTagAttribute($img,"class",trim("adapt-img adapt-img-multilayers $class"));
-			$img = $this->setTagAttribute($img,"onmousedown","adaptImgFix(this)");
+			$img = $this->setTagAttribute($img, "src", $fallback_file);
+			$img = $this->setTagAttribute($img, "class", trim("adapt-img adapt-img-multilayers $class"));
+			$img = $this->setTagAttribute($img, "onmousedown", "adaptImgFix(this)");
 			// $img = setTagAttribute($img,"onkeydown","adaptImgFix(this)"); // useful ?
 
 			// markup can be adjusted in hook, depending on style and class
 			$markup = "<picture class=\"adapt-img-wrapper $cid $extension\">$img</picture>";
-			$markup = $this->imgMarkupHook($markup,$originalClass,$originalStyle);
+			$markup = $this->imgMarkupHook($markup, $originalClass, $originalStyle);
 
-			$out .= "<!--[if !IE]><!-->$markup\n<style title='adaptive'>".$style."</style><!--<![endif]-->";
+			$out .= "<!--[if !IE]><!-->$markup\n<style title='adaptive'>" . $style . "</style><!--<![endif]-->";
 		}
 
 		return $out;
 	}
-
 
 
 	/**
@@ -1224,40 +1233,48 @@ SVG;
 	 * @return array
 	 *  (width,height)
 	 */
-	protected function imgSize($img) {
+	protected function imgSize($img){
 
-		static $largeur_img =array(), $hauteur_img= array();
+		static $largeur_img = array(), $hauteur_img = array();
 		$srcWidth = 0;
 		$srcHeight = 0;
 
-		$source = $this->tagAttribute($img,'src');
+		$source = $this->tagAttribute($img, 'src');
 
-		if (!$source) $source = $img;
-		else {
-			$srcWidth = $this->tagAttribute($img,'width');
-			$srcHeight = $this->tagAttribute($img,'height');
-			if ($srcWidth AND $srcHeight)
-				return array($srcWidth,$srcHeight);
+		if (!$source){
+			$source = $img;
+		} else {
+			$srcWidth = $this->tagAttribute($img, 'width');
+			$srcHeight = $this->tagAttribute($img, 'height');
+			if ($srcWidth and $srcHeight){
+				return array($srcWidth, $srcHeight);
+			}
 			$source = $this->URL2filepath($source);
 		}
 
 		// never process on remote img
-		if (!$source OR preg_match(';^(\w{3,7}://);', $source)){
-			return array(0,0);
+		if (!$source or preg_match(';^(\w{3,7}://);', $source)){
+			return array(0, 0);
 		}
 
-		if (isset($largeur_img[$source]))
+		if (isset($largeur_img[$source])){
 			$srcWidth = $largeur_img[$source];
-		if (isset($hauteur_img[$source]))
+		}
+		if (isset($hauteur_img[$source])){
 			$srcHeight = $hauteur_img[$source];
-		if (!$srcWidth OR !$srcHeight){
+		}
+		if (!$srcWidth or !$srcHeight){
 			if (file_exists($source)
-				AND $srcsize = @getimagesize($source)){
-				if (!$srcWidth)	$largeur_img[$source] = $srcWidth = $srcsize[0];
-				if (!$srcHeight)	$hauteur_img[$source] = $srcHeight = $srcsize[1];
+				and $srcsize = @getimagesize($source)){
+				if (!$srcWidth){
+					$largeur_img[$source] = $srcWidth = $srcsize[0];
+				}
+				if (!$srcHeight){
+					$hauteur_img[$source] = $srcHeight = $srcsize[1];
+				}
 			}
 		}
-		return array(intval($srcWidth),intval($srcHeight));
+		return array(intval($srcWidth), intval($srcHeight));
 	}
 
 
@@ -1273,14 +1290,14 @@ SVG;
 	 *   if true the function also returns the regexp match result
 	 * @return array|string
 	 */
-	protected function tagAttribute($tag, $attribute, $full = false) {
+	protected function tagAttribute($tag, $attribute, $full = false){
 		if (preg_match(
-		',(^.*?<(?:(?>\s*)(?>[\w:.-]+)(?>(?:=(?:"[^"]*"|\'[^\']*\'|[^\'"]\S*))?))*?)(\s+'
-		.$attribute
-		.'(?:=\s*("[^"]*"|\'[^\']*\'|[^\'"]\S*))?)()([^>]*>.*),isS',
+			',(^.*?<(?:(?>\s*)(?>[\w:.-]+)(?>(?:=(?:"[^"]*"|\'[^\']*\'|[^\'"]\S*))?))*?)(\s+'
+			. $attribute
+			. '(?:=\s*("[^"]*"|\'[^\']*\'|[^\'"]\S*))?)()([^>]*>.*),isS',
 
-		$tag, $r)) {
-			if ($r[3][0] == '"' || $r[3][0] == "'") {
+			$tag, $r)){
+			if ($r[3][0]=='"' || $r[3][0]=="'"){
 				$r[4] = substr($r[3], 1, -1);
 				$r[3] = $r[3][0];
 			} elseif ($r[3]!=='') {
@@ -1290,14 +1307,15 @@ SVG;
 				$r[4] = trim($r[2]);
 			}
 			$att = str_replace("&#39;", "'", $r[4]);
-		}
-		else
+		} else {
 			$att = NULL;
+		}
 
-		if ($full)
+		if ($full){
 			return array($att, $r);
-		else
+		} else {
 			return $att;
+		}
 	}
 
 
@@ -1317,35 +1335,36 @@ SVG;
 	 * @return string
 	 *   modified tag
 	 */
-	protected function setTagAttribute($tag, $attribute, $value, $protect=true, $removeEmpty=false) {
+	protected function setTagAttribute($tag, $attribute, $value, $protect = true, $removeEmpty = false){
 		// preparer l'attribut
 		// supprimer les &nbsp; etc mais pas les balises html
 		// qui ont un sens dans un attribut value d'un input
-		if ($protect) {
-			$value = preg_replace(array(",\n,",",\s(?=\s),msS"),array(" ",""),strip_tags($value));
-			$value = str_replace(array("'",'"',"<",">"),array('&#039;','&#034;','&lt;','&gt;'), $value);
+		if ($protect){
+			$value = preg_replace(array(",\n,", ",\s(?=\s),msS"), array(" ", ""), strip_tags($value));
+			$value = str_replace(array("'", '"', "<", ">"), array('&#039;', '&#034;', '&lt;', '&gt;'), $value);
 		}
 
 		// echapper les ' pour eviter tout bug
 		$value = str_replace("'", "&#039;", $value);
-		if ($removeEmpty AND strlen($value)==0)
+		if ($removeEmpty and strlen($value)==0){
 			$insert = '';
-		else
+		} else {
 			$insert = " $attribute='$value'";
+		}
 
 		list($old, $r) = $this->tagAttribute($tag, $attribute, true);
 
-		if ($old !== NULL) {
+		if ($old!==NULL){
 			// Remplacer l'ancien attribut du meme nom
-			$tag = $r[1].$insert.$r[5];
-		}
-		else {
+			$tag = $r[1] . $insert . $r[5];
+		} else {
 			// preferer une balise " />" (comme <img />)
-			if (preg_match(',/>,', $tag))
-				$tag = preg_replace(",\s?/>,S", $insert." />", $tag, 1);
-			// sinon une balise <a ...> ... </a>
-			else
-				$tag = preg_replace(",\s?>,S", $insert.">", $tag, 1);
+			if (preg_match(',/>,', $tag)){
+				$tag = preg_replace(",\s?/>,S", $insert . " />", $tag, 1);
+			} // sinon une balise <a ...> ... </a>
+			else {
+				$tag = preg_replace(",\s?>,S", $insert . ">", $tag, 1);
+			}
 		}
 
 		return $tag;
@@ -1365,7 +1384,7 @@ SVG;
 			'svg' => 'image/svg+xml',
 		);
 
-		return (isset($MimeTable[$extension])?$MimeTable[$extension]:'image/jpeg');
+		return (isset($MimeTable[$extension]) ? $MimeTable[$extension] : 'image/jpeg');
 	}
 
 
@@ -1418,16 +1437,17 @@ SVG;
 	 *     URI Scheme of base64 if possible,
 	 *     or URL from source file
 	 */
-	function base64EmbedFile ($filename, $maxsize = 32768) {
-		$extension = substr(strrchr($filename,'.'),1);
+	function base64EmbedFile($filename, $maxsize = 32768){
+		$extension = substr(strrchr($filename, '.'), 1);
 
 		if (!file_exists($filename)
-			OR filesize($filename)>$maxsize
-			OR !$content = file_get_contents($filename))
+			or filesize($filename)>$maxsize
+			or !$content = file_get_contents($filename)){
 			return $filename;
+		}
 
 		$base64 = base64_encode($content);
-		$encoded = 'data:'.$this->extensionToMimeType($extension).';base64,'.$base64;
+		$encoded = 'data:' . $this->extensionToMimeType($extension) . ';base64,' . $base64;
 
 		return $encoded;
 	}
@@ -1448,96 +1468,103 @@ SVG;
 	 *   file name of the resized image (or source image if fail)
 	 * @throws Exception
 	 */
-	function img2JPG($source, $destDir, $bgColor='#000000', $quality=85) {
+	function img2JPG($source, $destDir, $bgColor = '#000000', $quality = 85){
 		$infos = $this->readSourceImage($source, $destDir, 'jpg');
 
-		if (!$infos) return $source;
+		if (!$infos){
+			return $source;
+		}
 
 		$couleurs = $this->colorHEX2RGB($bgColor);
-		$dr= $couleurs["red"];
-		$dv= $couleurs["green"];
-		$db= $couleurs["blue"];
+		$dr = $couleurs["red"];
+		$dv = $couleurs["green"];
+		$db = $couleurs["blue"];
 
 		$srcWidth = $infos["largeur"];
 		$srcHeight = $infos["hauteur"];
 
-		if ($infos["creer"]) {
-			if ($this->maxImagePxGDMemoryLimit AND $srcWidth*$srcHeight>$this->maxImagePxGDMemoryLimit){
-				$this->log("No resize allowed : image is " . $srcWidth*$srcHeight . "px, larger than ".$this->maxImagePxGDMemoryLimit."px");
+		if ($infos["creer"]){
+			if ($this->maxImagePxGDMemoryLimit and $srcWidth*$srcHeight>$this->maxImagePxGDMemoryLimit){
+				$this->log("No resize allowed : image is " . $srcWidth*$srcHeight . "px, larger than " . $this->maxImagePxGDMemoryLimit . "px");
 				return $infos["fichier"];
 			}
 			$fonction_imagecreatefrom = $infos['fonction_imagecreatefrom'];
 
-			if (!function_exists($fonction_imagecreatefrom))
+			if (!function_exists($fonction_imagecreatefrom)){
 				return $infos["fichier"];
+			}
 			$im = @$fonction_imagecreatefrom($infos["fichier"]);
 
 			if (!$im){
-				throw new Exception("GD image creation fail for ".$infos["fichier"]);
+				throw new Exception("GD image creation fail for " . $infos["fichier"]);
 			}
 
 			$this->imagepalettetotruecolor($im);
 			$im_ = imagecreatetruecolor($srcWidth, $srcHeight);
-			if ($infos["format_source"] == "gif" AND function_exists('ImageCopyResampled')) {
+			if ($infos["format_source"]=="gif" and function_exists('ImageCopyResampled')){
 				// if was a transparent GIF
 				// make a tansparent PNG
 				@imagealphablending($im_, false);
-				@imagesavealpha($im_,true);
-				if (function_exists("imageAntiAlias")) imageAntiAlias($im_,true);
+				@imagesavealpha($im_, true);
+				if (function_exists("imageAntiAlias")){
+					imageAntiAlias($im_, true);
+				}
 				@ImageCopyResampled($im_, $im, 0, 0, 0, 0, $srcWidth, $srcHeight, $srcWidth, $srcHeight);
 				imagedestroy($im);
 				$im = $im_;
 			}
 
 			// allocate background Color
-			$color_t = ImageColorAllocate( $im_, $dr, $dv, $db);
+			$color_t = ImageColorAllocate($im_, $dr, $dv, $db);
 
-			imagefill ($im_, 0, 0, $color_t);
+			imagefill($im_, 0, 0, $color_t);
 
 			// JPEG has no transparency layer, no need to copy
 			// the image pixel by pixel
-			if ($infos["format_source"] == "jpg") {
+			if ($infos["format_source"]=="jpg"){
 				$im_ = &$im;
-			} else
-			for ($x = 0; $x < $srcWidth; $x++) {
-				for ($y=0; $y < $srcHeight; $y++) {
+			} else {
+				for ($x = 0; $x<$srcWidth; $x++){
+					for ($y = 0; $y<$srcHeight; $y++){
 
-					$rgb = ImageColorAt($im, $x, $y);
-					$a = ($rgb >> 24) & 0xFF;
-					$r = ($rgb >> 16) & 0xFF;
-					$g = ($rgb >> 8) & 0xFF;
-					$b = $rgb & 0xFF;
+						$rgb = ImageColorAt($im, $x, $y);
+						$a = ($rgb >> 24) & 0xFF;
+						$r = ($rgb >> 16) & 0xFF;
+						$g = ($rgb >> 8) & 0xFF;
+						$b = $rgb & 0xFF;
 
-					$a = (127-$a) / 127;
+						$a = (127-$a)/127;
 
-					// faster if no transparency
-					if ($a == 1) {
-						$r = $r;
-						$g = $g;
-						$b = $b;
+						// faster if no transparency
+						if ($a==1){
+							$r = $r;
+							$g = $g;
+							$b = $b;
+						} // faster if full transparency
+						else {
+							if ($a==0){
+								$r = $dr;
+								$g = $dv;
+								$b = $db;
+
+							} else {
+								$r = round($a*$r+$dr*(1-$a));
+								$g = round($a*$g+$dv*(1-$a));
+								$b = round($a*$b+$db*(1-$a));
+							}
+						}
+						$a = (1-$a)*127;
+						$color = ImageColorAllocateAlpha($im_, $r, $g, $b, $a);
+						imagesetpixel($im_, $x, $y, $color);
 					}
-					// faster if full transparency
-					else if ($a == 0) {
-						$r = $dr;
-						$g = $dv;
-						$b = $db;
-
-					}
-					else {
-						$r = round($a * $r + $dr * (1-$a));
-						$g = round($a * $g + $dv * (1-$a));
-						$b = round($a * $b + $db * (1-$a));
-					}
-					$a = (1-$a) *127;
-					$color = ImageColorAllocateAlpha( $im_, $r, $g, $b, $a);
-					imagesetpixel ($im_, $x, $y, $color);
 				}
 			}
 			if (!$this->saveGDImage($im_, $infos, $quality)){
-				throw new Exception("Unable to write ".$infos['fichier_dest'].", check write right of $destDir");
+				throw new Exception("Unable to write " . $infos['fichier_dest'] . ", check write right of $destDir");
 			}
-			if ($im!==$im_)
+			if ($im!==$im_){
 				imagedestroy($im);
+			}
 			imagedestroy($im_);
 		}
 		return $infos["fichier_dest"];
@@ -1557,50 +1584,57 @@ SVG;
 	 *   file name of the resized image (or source image if fail)
 	 * @throws Exception
 	 */
-	function imgSharpResize($source, $dest, $maxWidth = 0, $maxHeight = 0, $quality=null, bool $forceSaveWithQuality){
+	function imgSharpResize($source, $dest, $maxWidth = 0, $maxHeight = 0, $quality = null, bool $forceSaveWithQuality){
 		$infos = $this->readSourceImage($source, $dest);
-		if (!$infos) return $source;
-
-		if ($maxWidth==0 AND $maxHeight==0)
+		if (!$infos){
 			return $source;
+		}
 
-		if ($maxWidth==0) $maxWidth = 10000;
-		elseif ($maxHeight==0) $maxHeight = 10000;
+		if ($maxWidth==0 and $maxHeight==0){
+			return $source;
+		}
+
+		if ($maxWidth==0){
+			$maxWidth = 10000;
+		} elseif ($maxHeight==0) {
+			$maxHeight = 10000;
+		}
 
 		$srcFile = $infos['fichier'];
 		$srcExt = $infos['format_source'];
 
-		$destination = dirname($infos['fichier_dest']) . "/" . basename($infos['fichier_dest'], ".".$infos["format_dest"]);
+		$destination = dirname($infos['fichier_dest']) . "/" . basename($infos['fichier_dest'], "." . $infos["format_dest"]);
 
 		// compute width & height
 		$srcWidth = $infos['largeur'];
 		$srcHeight = $infos['hauteur'];
-		list($destWidth,$destHeight) = $this->computeImageSize($srcWidth, $srcHeight, $maxWidth, $maxHeight);
+		list($destWidth, $destHeight) = $this->computeImageSize($srcWidth, $srcHeight, $maxWidth, $maxHeight);
 
-		if ($infos['creer']==false)
+		if ($infos['creer']==false){
 			return $infos['fichier_dest'];
+		}
 
 		// If source image is smaller than desired size, keep source
 		if ($srcWidth
-		  AND $srcWidth<=$destWidth
-		  AND $srcHeight<=$destHeight){
+			and $srcWidth<=$destWidth
+			and $srcHeight<=$destHeight){
 
 			if (is_null($quality)
-			  or !$forceSaveWithQuality
-			  or ($this->maxImagePxGDMemoryLimit AND $srcWidth*$srcHeight>$this->maxImagePxGDMemoryLimit)) {
+				or !$forceSaveWithQuality
+				or ($this->maxImagePxGDMemoryLimit and $srcWidth*$srcHeight>$this->maxImagePxGDMemoryLimit)){
 				$infos['format_dest'] = $srcExt;
-				$infos['fichier_dest'] = $destination.".".$srcExt;
+				$infos['fichier_dest'] = $destination . "." . $srcExt;
 				@copy($srcFile, $infos['fichier_dest']);
-			}
-			else {
+			} else {
 				$destExt = $infos['format_dest'];
 				if (!$destExt){
 					throw new Exception("No output extension for {$srcFile}");
 				}
 				$fonction_imagecreatefrom = $infos['fonction_imagecreatefrom'];
 
-				if (!function_exists($fonction_imagecreatefrom))
+				if (!function_exists($fonction_imagecreatefrom)){
 					return $srcFile;
+				}
 
 				$srcImage = @$fonction_imagecreatefrom($srcFile);
 				if (!$srcImage){
@@ -1614,16 +1648,15 @@ SVG;
 
 				// save destination image
 				if (!$this->saveGDImage($srcImage, $infos, $quality)){
-					throw new Exception("Unable to write ".$infos['fichier_dest'].", check write right of $dest");
+					throw new Exception("Unable to write " . $infos['fichier_dest'] . ", check write right of $dest");
 				}
 
 				ImageDestroy($srcImage);
 			}
 
-		}
-		else {
-			if ($this->maxImagePxGDMemoryLimit AND $srcWidth*$srcHeight>$this->maxImagePxGDMemoryLimit){
-				$this->log("No resize allowed : image is " . $srcWidth*$srcHeight . "px, larger than ".$this->maxImagePxGDMemoryLimit."px");
+		} else {
+			if ($this->maxImagePxGDMemoryLimit and $srcWidth*$srcHeight>$this->maxImagePxGDMemoryLimit){
+				$this->log("No resize allowed : image is " . $srcWidth*$srcHeight . "px, larger than " . $this->maxImagePxGDMemoryLimit . "px");
 				return $srcFile;
 			}
 			$destExt = $infos['format_dest'];
@@ -1633,8 +1666,9 @@ SVG;
 
 			$fonction_imagecreatefrom = $infos['fonction_imagecreatefrom'];
 
-			if (!function_exists($fonction_imagecreatefrom))
+			if (!function_exists($fonction_imagecreatefrom)){
 				return $srcFile;
+			}
 			$srcImage = @$fonction_imagecreatefrom($srcFile);
 			if (!$srcImage){
 				throw new Exception("GD image creation fail for {$srcFile}");
@@ -1649,25 +1683,28 @@ SVG;
 				// if transparent GIF, keep the transparency
 				if ($srcExt=="gif"){
 					$transparent_index = ImageColorTransparent($srcImage);
-					if($transparent_index!=(-1)){
-						$transparent_color = ImageColorsForIndex($srcImage,$transparent_index);
-						if(!empty($transparent_color)) {
-							$transparent_new = ImageColorAllocate($destImage,$transparent_color['red'],$transparent_color['green'],$transparent_color['blue']);
-							$transparent_new_index = ImageColorTransparent($destImage,$transparent_new);
-							ImageFill($destImage, 0,0, $transparent_new_index);
+					if ($transparent_index!=(-1)){
+						$transparent_color = ImageColorsForIndex($srcImage, $transparent_index);
+						if (!empty($transparent_color)){
+							$transparent_new = ImageColorAllocate($destImage, $transparent_color['red'], $transparent_color['green'], $transparent_color['blue']);
+							$transparent_new_index = ImageColorTransparent($destImage, $transparent_new);
+							ImageFill($destImage, 0, 0, $transparent_new_index);
 						}
 					}
 				}
 				if ($destExt=="png"){
 					// keep transparency
-					if (function_exists("imageAntiAlias")) imageAntiAlias($destImage, true);
+					if (function_exists("imageAntiAlias")){
+						imageAntiAlias($destImage, true);
+					}
 					@imagealphablending($destImage, false);
 					@imagesavealpha($destImage, true);
 				}
 				$ok = @ImageCopyResampled($destImage, $srcImage, 0, 0, 0, 0, $destWidth, $destHeight, $srcWidth, $srcHeight);
 			}
-			if (!$ok)
+			if (!$ok){
 				$ok = ImageCopyResized($destImage, $srcImage, 0, 0, 0, 0, $destWidth, $destHeight, $srcWidth, $srcHeight);
+			}
 
 			if ($destExt=="jpg" && function_exists('imageconvolution')){
 				$intSharpness = $this->computeSharpCoeff($srcWidth, $destWidth);
@@ -1680,11 +1717,12 @@ SVG;
 			}
 			// save destination image
 			if (!$this->saveGDImage($destImage, $infos, $quality)){
-				throw new Exception("Unable to write ".$infos['fichier_dest'].", check write right of $dest");
+				throw new Exception("Unable to write " . $infos['fichier_dest'] . ", check write right of $dest");
 			}
 
-			if ($srcImage)
+			if ($srcImage){
 				ImageDestroy($srcImage);
+			}
 			ImageDestroy($destImage);
 		}
 
@@ -1699,104 +1737,116 @@ SVG;
 	 * @param int $intFinal
 	 * @return mixed
 	 */
-	function computeSharpCoeff($intOrig, $intFinal) {
-	  $intFinal = $intFinal * (750.0 / $intOrig);
-	  $intA     = 52;
-	  $intB     = -0.27810650887573124;
-	  $intC     = .00047337278106508946;
-	  $intRes   = $intA + $intB * $intFinal + $intC * $intFinal * $intFinal;
-	  return max(round($intRes), 0);
+	function computeSharpCoeff($intOrig, $intFinal){
+		$intFinal = $intFinal*(750.0/$intOrig);
+		$intA = 52;
+		$intB = -0.27810650887573124;
+		$intC = .00047337278106508946;
+		$intRes = $intA+$intB*$intFinal+$intC*$intFinal*$intFinal;
+		return max(round($intRes), 0);
 	}
 
 	/**
 	 * Read and preprocess informations about source image
 	 *
 	 * @param string $img
-	 * 		HTML img tag <img src=... /> OR source filename
+	 *        HTML img tag <img src=... /> OR source filename
 	 * @param string $dest
-	 * 		Destination dir of new image
+	 *        Destination dir of new image
 	 * @param null|string $outputFormat
-	 * 		forced extension of output image file : jpg, png, gif
+	 *        forced extension of output image file : jpg, png, gif
 	 * @return bool|array
-	 * 		false in case of error
+	 *        false in case of error
 	 *    array of image information otherwise
 	 * @throws Exception
 	 */
-	protected function readSourceImage($img, $dest, $outputFormat = null) {
-		if (strlen($img)==0) return false;
+	protected function readSourceImage($img, $dest, $outputFormat = null){
+		if (strlen($img)==0){
+			return false;
+		}
 		$ret = array();
 
 		$source = trim($this->tagAttribute($img, 'src'));
-		if (strlen($source) < 1){
+		if (strlen($source)<1){
 			$source = $img;
 			$img = "<img src='$source' />";
 		}
 		# gerer img src="data:....base64"
 		# don't process base64
-		else if (preg_match('@^data:image/(jpe?g|png|gif);base64,(.*)$@isS', $source)) {
-			return false;
+		else {
+			if (preg_match('@^data:image/(jpe?g|png|gif);base64,(.*)$@isS', $source)){
+				return false;
+			} else {
+				$source = $this->URL2filepath($source);
+			}
 		}
-		else
-			$source = $this->URL2filepath($source);
 
 		// don't process distant images
-		if (!$source OR preg_match(';^(\w{3,7}://);', $source)){
+		if (!$source or preg_match(';^(\w{3,7}://);', $source)){
 			return false;
 		}
 
 		$extension_dest = "";
-		if (preg_match(",\.(gif|jpe?g|png)($|[?]),i", $source, $regs)) {
+		if (preg_match(",\.(gif|jpe?g|png)($|[?]),i", $source, $regs)){
 			$extension = strtolower($regs[1]);
 			$extension_dest = $extension;
 		}
-		if (!is_null($outputFormat)) $extension_dest = $outputFormat;
+		if (!is_null($outputFormat)){
+			$extension_dest = $outputFormat;
+		}
 
-		if (!$extension_dest) return false;
+		if (!$extension_dest){
+			return false;
+		}
 
 		if (@file_exists($source)){
-			list ($ret["largeur"],$ret["hauteur"]) = $this->imgSize(strpos($img,"width=")!==false?$img:$source);
+			list ($ret["largeur"], $ret["hauteur"]) = $this->imgSize(strpos($img, "width=")!==false ? $img : $source);
 			$date_src = @filemtime($source);
-		}
-		else
+		} else {
 			return false;
+		}
 
 		// error if no known size
-		if (!($ret["hauteur"] OR $ret["largeur"]))
+		if (!($ret["hauteur"] or $ret["largeur"])){
 			return false;
+		}
 
 
 		// dest filename : dest/md5(source) or dest if full name provided
-		if (substr($dest,-1)=="/"){
+		if (substr($dest, -1)=="/"){
 			$nom_fichier = md5($source);
 			$fichier_dest = $dest . $nom_fichier . "." . $extension_dest;
-		}
-		else
+		} else {
 			$fichier_dest = $dest;
+		}
 
 		$creer = true;
 		if (@file_exists($f = $fichier_dest)){
-			if (filemtime($f)>=$date_src)
+			if (filemtime($f)>=$date_src){
 				$creer = false;
+			}
 		}
 		// mkdir complete path if needed
 		if ($creer
-		  AND !is_dir($d=dirname($fichier_dest))){
-			mkdir($d,0777,true);
+			and !is_dir($d = dirname($fichier_dest))){
+			mkdir($d, 0777, true);
 			if (!is_dir($d)){
 				throw new Exception("Unable to mkdir {$d}");
 			}
 		}
 
-		$ret["fonction_imagecreatefrom"] = "imagecreatefrom".($extension != 'jpg' ? $extension : 'jpeg');
+		$ret["fonction_imagecreatefrom"] = "imagecreatefrom" . ($extension!='jpg' ? $extension : 'jpeg');
 		$ret["fichier"] = $source;
 		$ret["fichier_dest"] = $fichier_dest;
-		$ret["format_source"] = ($extension != 'jpeg' ? $extension : 'jpg');
+		$ret["format_source"] = ($extension!='jpeg' ? $extension : 'jpg');
 		$ret["format_dest"] = $extension_dest;
 		$ret["date_src"] = $date_src;
 		$ret["creer"] = $creer;
 		$ret["tag"] = $img;
 
-		if (!function_exists($ret["fonction_imagecreatefrom"])) return false;
+		if (!function_exists($ret["fonction_imagecreatefrom"])){
+			return false;
+		}
 		return $ret;
 	}
 
@@ -1808,22 +1858,22 @@ SVG;
 	 * @param int $maxHeight
 	 * @return array
 	 */
-	function computeImageSize($srcWidth, $srcHeight, $maxWidth, $maxHeight) {
+	function computeImageSize($srcWidth, $srcHeight, $maxWidth, $maxHeight){
 		$ratioWidth = $srcWidth/$maxWidth;
 		$ratioHeight = $srcHeight/$maxHeight;
 
-		if ($ratioWidth <=1 AND $ratioHeight <=1) {
-			return array($srcWidth,$srcHeight);
+		if ($ratioWidth<=1 and $ratioHeight<=1){
+			return array($srcWidth, $srcHeight);
+		} else {
+			if ($ratioWidth<$ratioHeight){
+				$destWidth = intval(round($srcWidth/$ratioHeight));
+				$destHeight = $maxHeight;
+			} else {
+				$destWidth = $maxWidth;
+				$destHeight = intval(round($srcHeight/$ratioWidth));
+			}
 		}
-		else if ($ratioWidth < $ratioHeight) {
-			$destWidth = intval(round($srcWidth/$ratioHeight));
-			$destHeight = $maxHeight;
-		}
-		else {
-			$destWidth = $maxWidth;
-			$destHeight = intval(round($srcHeight/$ratioWidth));
-		}
-		return array ($destWidth, $destHeight);
+		return array($destWidth, $destHeight);
 	}
 
 	/**
@@ -1838,28 +1888,30 @@ SVG;
 	 *   compression quality for JPG images
 	 * @return bool
 	 */
-	protected function saveGDImage($img, $infos, $quality=null) {
+	protected function saveGDImage($img, $infos, $quality = null){
 		$fichier = $infos['fichier_dest'];
-		$tmp = $fichier.".tmp";
-		switch($infos['format_dest']){
+		$tmp = $fichier . ".tmp";
+		switch ($infos['format_dest']) {
 			case "gif":
-				$ret = imagegif($img,$tmp);
+				$ret = imagegif($img, $tmp);
 				break;
 			case "png":
-				$ret = imagepng($img,$tmp);
+				$ret = imagepng($img, $tmp);
 				break;
 			case "jpg":
 			case "jpeg":
 				// Enable interlacing on large images (aka not thumbnail)
-				if (imagesx($img)*imagesy($img) > 100000) {
+				if (imagesx($img)*imagesy($img)>100000){
 					imageinterlace($img, true);
 				}
-				$ret = imagejpeg($img,$tmp,min($quality,100));
+				$ret = imagejpeg($img, $tmp, min($quality, 100));
 				break;
 		}
-		if(file_exists($tmp)){
+		if (file_exists($tmp)){
 			$taille_test = getimagesize($tmp);
-			if ($taille_test[0] < 1) return false;
+			if ($taille_test[0]<1){
+				return false;
+			}
 
 			@unlink($fichier); // le fichier peut deja exister
 			@rename($tmp, $fichier);
@@ -1875,22 +1927,25 @@ SVG;
 	 * @param resource $img
 	 * @return bool
 	 */
-	protected function imagepalettetotruecolor(&$img) {
-		if (function_exists("imagepalettetotruecolor"))
+	protected function imagepalettetotruecolor(&$img){
+		if (function_exists("imagepalettetotruecolor")){
 			return imagepalettetotruecolor($img);
+		}
 
-		if ($img AND !imageistruecolor($img) AND function_exists('imagecreatetruecolor')) {
+		if ($img and !imageistruecolor($img) and function_exists('imagecreatetruecolor')){
 			$w = imagesx($img);
 			$h = imagesy($img);
-			$img1 = imagecreatetruecolor($w,$h);
+			$img1 = imagecreatetruecolor($w, $h);
 			// keep alpha layer if possible
-			if(function_exists('ImageCopyResampled')) {
-				if (function_exists("imageAntiAlias")) imageAntiAlias($img1,true);
+			if (function_exists('ImageCopyResampled')){
+				if (function_exists("imageAntiAlias")){
+					imageAntiAlias($img1, true);
+				}
 				@imagealphablending($img1, false);
-				@imagesavealpha($img1,true);
+				@imagesavealpha($img1, true);
 				@ImageCopyResampled($img1, $img, 0, 0, 0, 0, $w, $h, $w, $h);
 			} else {
-				imagecopy($img1,$img,0,0,0,0,$w,$h);
+				imagecopy($img1, $img, 0, 0, 0, 0, $w, $h);
 			}
 
 			$img = $img1;
@@ -1906,11 +1961,12 @@ SVG;
 	 * @return string
 	 */
 	protected function colorHTML2Hex($color){
-		static $html_colors=array(
-			'aqua'=>'00FFFF','black'=>'000000','blue'=>'0000FF','fuchsia'=>'FF00FF','gray'=>'808080','green'=>'008000','lime'=>'00FF00','maroon'=>'800000',
-			'navy'=>'000080','olive'=>'808000','purple'=>'800080','red'=>'FF0000','silver'=>'C0C0C0','teal'=>'008080','white'=>'FFFFFF','yellow'=>'FFFF00');
-		if (isset($html_colors[$lc=strtolower($color)]))
+		static $html_colors = array(
+			'aqua' => '00FFFF', 'black' => '000000', 'blue' => '0000FF', 'fuchsia' => 'FF00FF', 'gray' => '808080', 'green' => '008000', 'lime' => '00FF00', 'maroon' => '800000',
+			'navy' => '000080', 'olive' => '808000', 'purple' => '800080', 'red' => 'FF0000', 'silver' => 'C0C0C0', 'teal' => '008080', 'white' => 'FFFFFF', 'yellow' => 'FFFF00');
+		if (isset($html_colors[$lc = strtolower($color)])){
 			return $html_colors[$lc];
+		}
 		return $color;
 	}
 
@@ -1920,9 +1976,9 @@ SVG;
 	 *   hexa color (#000000 to #FFFFFF).
 	 * @return array
 	 */
-	protected function colorHEX2RGB($color) {
+	protected function colorHEX2RGB($color){
 		$color = $this->colorHTML2Hex($color);
-		$color = ltrim($color,"#");
+		$color = ltrim($color, "#");
 		$retour["red"] = hexdec(substr($color, 0, 2));
 		$retour["green"] = hexdec(substr($color, 2, 2));
 		$retour["blue"] = hexdec(substr($color, 4, 2));
