@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.4.0
+ * @version    3.0.0
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -105,6 +105,18 @@ class AdaptiveImages {
 	protected $acceptedFormats = array('gif', 'png', 'jpeg', 'jpg');
 
 	/**
+	 * Alternatives format to propose as a source (potentially better but not fully supported by all browsers like webp)
+	 * @var array
+	 */
+	protected $alternativeFormats = array(
+		/*
+		 'gif' => array('webp'),
+		'png' => array('webp'),
+		'jpg' => array('webp')
+		*/
+	);
+
+	/**
 	 * directory for storing adaptive images
 	 * @var string
 	 */
@@ -121,7 +133,7 @@ class AdaptiveImages {
 	 * Choose the markup Methd : '3layers' (default) or 'srcset'
 	 * @var string
 	 */
-	protected $markupMethod = '3layers';
+	protected $markupMethod = 'srcset';
 
 	/**
 	 * Should images always be in an instrinsic container, even if using srcset method?
@@ -1017,20 +1029,39 @@ SVG;
 		}
 
 		$srcset = array();
+		$extensions = array($extension);
+		// si on est en "onDemand" on peut proposer des formats alternatifs dans la liste
+		// sinon c'est trop couteux de generer au calcul toutes les variantes pour chaque image
+		if (!empty($this->alternativeFormats[$extension]) and $this->onDemandImages) {
+			foreach ($this->alternativeFormats[$extension] as $altExt) {
+				if (in_array($altExt, array('webp'))) {
+					array_unshift($extensions, $altExt);
+				}
+				else {
+					$extensions[] = $altExt;
+				}
+			}
+		}
+		$extensionList = array();
+		foreach ($extensions as $e) {
+			$extensionList[$e] = array();
+		}
+
 		if ($maxWidthMobile){
 			$srcset['mobile'] = array(
-				'20x' => array(), // est-ce qu'on veut envoyer du mobile en 2x ?
-				'15x' => array(), // est-ce qu'on veut envoyer du mobile en 1.5x ?
-				'10x' => array(),
+				'20x' => $extensionList, // est-ce qu'on veut envoyer du mobile en 2x ?
+				'15x' => $extensionList, // est-ce qu'on veut envoyer du mobile en 1.5x ?
+				'10x' => $extensionList,
 			);
 		}
 
 		$srcset['all'] = array(
-			'20x' => array(),
-			'15x' => array(),
-			'10x' => array(),
+			'20x' => $extensionList,
+			'15x' => $extensionList,
+			'10x' => $extensionList,
 		);
 		$default_file = "";
+		$altExtensions = array_diff($extensions, array($extension));
 
 		foreach ($bkptImages as $w => $files){
 			foreach ($files as $kx => $file){
@@ -1041,7 +1072,11 @@ SVG;
 				if (isset($srcset[$srcset_key][$kx])){
 					$url = $this->filepath2URL($file);
 					$ww = round($w*intval($kx)/10);
-					$srcset[$srcset_key][$kx][] = "$url {$ww}w";
+					$srcset[$srcset_key][$kx][$extension][] = "$url {$ww}w";
+					foreach ($altExtensions as $e) {
+						$url = $this->filepath2URL($file.".".$e);
+						$srcset[$srcset_key][$kx][$e][] = "$url {$ww}w";
+					}
 				}
 			}
 			// set the default src : will be the largest 1x file smaller than the max-width
@@ -1066,8 +1101,13 @@ SVG;
 			}
 		}
 
-		$srcset_base = implode(', ', $srcset['all']['10x']);
-		unset($srcset['all']['10x']);
+		// for the <img> we can add the last srcset 10x if it is the same extension
+		// otherwise we have to use explicit source
+		$srcset_base = null;
+		if (end($extensions) === $extension) {
+			$srcset_base = implode(', ', $srcset['all']['10x'][$extension]);
+			unset($srcset['all']['10x'][$extension]);
+		}
 
 		// base sizes rule: fix the max width
 		$sizes_rule = array();
@@ -1109,10 +1149,13 @@ SVG;
 			} else {
 				$mq_max_width = "";
 			}
-			foreach ($srcset_dest as $kx => $files){
-				$files = implode(', ', $files);
+			foreach ($srcset_dest as $kx => $files_by_ext){
 				$dp = intval($kx)/10;
-				$sources[] = "<source media=\"{$mq_max_width}(-webkit-min-device-pixel-ratio: {$dp}), {$mq_max_width}(min-resolution: {$dp}dppx)\" srcset=\"$files\" sizes=\"$sizes_rule\" >";
+				foreach ($files_by_ext as $ext => $files){
+					$files = implode(', ', $files);
+					$type = $this->extensionToMimeType($ext);
+					$sources[] = "<source media=\"{$mq_max_width}(-webkit-min-device-pixel-ratio: {$dp}), {$mq_max_width}(min-resolution: {$dp}dppx)\" srcset=\"$files\" sizes=\"$sizes_rule\" type=\"$type\">";
+				}
 			}
 		}
 		$sources = "<!--[if IE 9]><video style=\"display: none;\"><![endif]-->" . implode("", $sources) . "<!--[if IE 9]></video><![endif]-->";
@@ -1122,6 +1165,7 @@ SVG;
 		if ($srcset_base){
 			$img = $this->setTagAttribute($img, "srcset", $srcset_base);
 		}
+		$img = $this->setTagAttribute($img, "type", $this->extensionToMimeType($extension));
 		$img = $this->setTagAttribute($img, "sizes", $sizes_rule);
 
 		// markup can be adjusted in hook, depending on style and class
