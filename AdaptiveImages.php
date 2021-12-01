@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.3.5
+ * @version    2.4.0
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -537,6 +537,11 @@ JS;
 		$dir_dest = $this->destDirectory . "$wkpt/$x/";
 		$dest = $dir_dest . $this->adaptedSrcToURL($src);
 
+		// une variante de format de l'image d'origine ?
+		if (substr($dest, -strlen($extension)-1) !== ".{$extension}") {
+			$dest .= ".{$extension}";
+		}
+
 		if (($exist = file_exists($dest)) and filemtime($dest)>=filemtime($src)){
 			return $dest;
 		}
@@ -616,9 +621,23 @@ JS;
 
 		// translate URL part to file path
 		$src = $this->adaptedURLToSrc($url);
+		$extension = null;
+
+		// extension not the same as the source file? (alternative format)
+		// type IMG/jpg/toto.jpg.webp
+		// TODO : check extension
+		if (!file_exists($src)
+		  and preg_match(',\.\w+\.(\w+)$,', $src, $m)
+		  //and in_array($m[1], $this->acceptedFormats)
+		) {
+			$extension = $m[1];
+			$src = substr($src, 0, -strlen($extension)-1);
+		}
 
 		$parts = pathinfo($src);
-		$extension = strtolower($parts['extension']);
+		if (empty($extension)) {
+			$extension = strtolower($parts['extension']);
+		}
 		$mime = $this->extensionToMimeType($extension);
 		$dpi = array('10x' => 1, '15x' => 1.5, '20x' => 2);
 
@@ -1389,6 +1408,7 @@ SVG;
 			'png' => 'image/png',
 			'gif' => 'image/gif',
 			'svg' => 'image/svg+xml',
+			'webp' => 'image/webp',
 		);
 
 		return (isset($MimeTable[$extension]) ? $MimeTable[$extension] : 'image/jpeg');
@@ -1610,6 +1630,11 @@ SVG;
 
 		$srcFile = $infos['fichier'];
 		$srcExt = $infos['format_source'];
+		// if the source is a PNG, reduce the loss
+		// will be ignored if dest is still PNG but will matters if dest is webp for instance
+		if ($srcExt === 'png' and $quality) {
+			$quality = round(0.5 * (100 + $quality));
+		}
 
 		$destination = dirname($infos['fichier_dest']) . "/" . basename($infos['fichier_dest'], "." . $infos["format_dest"]);
 
@@ -1627,8 +1652,8 @@ SVG;
 			and $srcWidth<=$destWidth
 			and $srcHeight<=$destHeight){
 
-			if (is_null($quality)
-				or !$forceSaveWithQuality
+			if (
+				((is_null($quality) or !$forceSaveWithQuality) and $infos['format_dest'] === $srcExt)
 				or ($this->maxImagePxGDMemoryLimit and $srcWidth*$srcHeight>$this->maxImagePxGDMemoryLimit)){
 				$infos['format_dest'] = $srcExt;
 				$infos['fichier_dest'] = $destination . "." . $srcExt;
@@ -1700,7 +1725,7 @@ SVG;
 						}
 					}
 				}
-				if ($destExt=="png"){
+				if ($destExt=="png" or ($srcExt=="png" and $destExt=="webp")){
 					// keep transparency
 					if (function_exists("imageAntiAlias")){
 						imageAntiAlias($destImage, true);
@@ -1714,14 +1739,19 @@ SVG;
 				$ok = ImageCopyResized($destImage, $srcImage, 0, 0, 0, 0, $destWidth, $destHeight, $srcWidth, $srcHeight);
 			}
 
-			if ($sharpen and $destExt=="jpg" && function_exists('imageconvolution')){
+			if ($sharpen
+				and !in_array($destExt, ["gif"])
+				and function_exists('imageconvolution')){
 				$intSharpness = $this->computeSharpCoeff($srcWidth, $destWidth);
+				// gif and png supposed to not be photos doesn't need too much sharpening
+				$c = (in_array($srcExt, ['gif', 'png']) ? 0.5 : 1);
 				$arrMatrix = array(
-					array(-1, -2, -1),
-					array(-2, $intSharpness+12, -2),
-					array(-1, -2, -1)
+					array(-1 * $c, -2 * $c, -1 * $c),
+					array(-2 *$c , $intSharpness + 12 * $c, -2 * $c),
+					array(-1 * $c, -2 * $c, -1 * $c)
 				);
-				imageconvolution($destImage, $arrMatrix, $intSharpness, 0);
+				$divisor = array_sum(array_map('array_sum', $arrMatrix));
+				imageconvolution($destImage, $arrMatrix, $divisor, 0);
 			}
 			// save destination image
 			if (!$this->saveGDImage($destImage, $infos, $quality)){
@@ -1825,7 +1855,15 @@ SVG;
 			$nom_fichier = md5($source);
 			$fichier_dest = $dest . $nom_fichier . "." . $extension_dest;
 		} else {
+			// if a full filename is provided, and not outputFormat
+			// use the extension as an explicit outputFormat
 			$fichier_dest = $dest;
+			if (is_null($outputFormat)) {
+				$parts = pathinfo($fichier_dest);
+				if (!empty($parts['extension'])) {
+					$extension_dest = $parts['extension'];
+				}
+			}
 		}
 
 		$creer = true;
@@ -1913,6 +1951,9 @@ SVG;
 					imageinterlace($img, true);
 				}
 				$ret = imagejpeg($img, $tmp, min($quality, 100));
+				break;
+			case "webp":
+				$ret = imagewebp($img, $tmp, min($quality, 100));
 				break;
 		}
 		if (file_exists($tmp)){
