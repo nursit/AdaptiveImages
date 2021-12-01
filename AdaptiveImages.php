@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    3.0.0
+ * @version    3.1.0
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -357,9 +357,10 @@ class AdaptiveImages {
 				case 'srcset':
 					$minwidthdesktop = $this->maxWidthMobileVersion+0.5;
 					$base_style = "<style type='text/css'>"
-						. "img.adapt-img,.lazy img.adapt-img{max-width:100%;height:auto;}"
+						. "img.adapt-img{max-width:100%;height:auto;}"
 						. ".adapt-img-wrapper {display:inline-block;max-width:100%;position:relative;background-position:center;background-size:cover;background-repeat:no-repeat;line-height:1px;overflow:hidden}"
 						. ".adapt-img-wrapper.intrinsic{display:block}.adapt-img-wrapper.intrinsic::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic img{position:absolute;left:0;top:0;width:100%;height:auto;}"
+						. ".adapt-img-wrapper.loading:not(.loaded){background-size: cover;}" // lazy-load
 						. "@media (min-width:{$minwidthdesktop}px){.adapt-img-wrapper.intrinsic-desktop{display:block}.adapt-img-wrapper.intrinsic-desktop::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic-desktop img{position:absolute;left:0;top:0;width:100%;height:auto;}}"
 						. ".adapt-img-background{width:100%;height:0}"
 						. "@media print{html .adapt-img-wrapper{background:none}}"
@@ -389,7 +390,7 @@ JS;
 					$length = 2000; // ~2000 bytes for CSS and minified JS we add here
 					// minified version of AdaptiveImages.js (using https://closure-compiler.appspot.com/home)
 					$js = <<<JS
-function adaptImgFix(d){var e=window.getComputedStyle(d.parentNode).backgroundImage.replace(/\W?\)$/,"").replace(/^url\(\W?|/,"");d.src=e&&"none"!=e?e:d.src}(function(){function d(a){var b=document.documentElement;b.className=b.className+" "+a}function e(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}document.createElement("picture");adaptImgLazy&&d("lazy");/android 2[.]/i.test(navigator.userAgent.toLowerCase())&&d("android2");var c=!1;if("undefined"!==typeof window.performance)c=window.performance.timing,c=(c=~~(adaptImgDocLength/(c.responseEnd-c.connectStart)))&&50>c;else{var f=navigator.connection||navigator.mozConnection||navigator.webkitConnection;"undefined"!==typeof f&&(c=3==f.type||4==f.type||/^[23]g$/.test(f.type))}c&&d("aislow");var h=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b);window.matchMedia||window.onbeforeprint||g()};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(h)}):e(h);var g=function(){for(var a=document.getElementsByClassName("adapt-img"),b=0;b<a.length;b++)adaptImgFix(a[b])};window.matchMedia&&window.matchMedia("print").addListener(function(a){g()});"undefined"!==typeof window.onbeforeprint&&(window.onbeforeprint=g)})();
+function adaptImgFix(d){var e=window.getComputedStyle(d.parentNode).backgroundImage.replace(/\W?\)$/,"").replace(/^url\(\W?|/,"");d.src=e&&"none"!=e?e:d.src}(function(){function d(a){var b=document.documentElement;b.className=b.className+" "+a}function e(a){var b=window.onload;window.onload="function"!=typeof window.onload?a:function(){b&&b();a()}}document.createElement("picture");/android 2[.]/i.test(navigator.userAgent.toLowerCase())&&d("android2");var c=!1;if("undefined"!==typeof window.performance)c=window.performance.timing,c=(c=~~(adaptImgDocLength/(c.responseEnd-c.connectStart)))&&50>c;else{var f=navigator.connection||navigator.mozConnection||navigator.webkitConnection;"undefined"!==typeof f&&(c=3==f.type||4==f.type||/^[23]g$/.test(f.type))}c&&d("aislow");var h=function(){var a=document.createElement("style");a.type="text/css";a.innerHTML=adaptImgAsyncStyles;var b=document.getElementsByTagName("style")[0];b.parentNode.insertBefore(a,b);window.matchMedia||window.onbeforeprint||g()};"undefined"!==typeof jQuery?jQuery(function(){jQuery(window).load(h)}):e(h);var g=function(){for(var a=document.getElementsByClassName("adapt-img"),b=0;b<a.length;b++)adaptImgFix(a[b])};window.matchMedia&&window.matchMedia("print").addListener(function(a){g()});"undefined"!==typeof window.onbeforeprint&&(window.onbeforeprint=g)})();
 JS;
 					// alternative noscript if no js (to de-activate progressive rendering on PNG and GIF)
 					if (!$this->nojsPngGifProgressiveRendering){
@@ -1168,8 +1169,15 @@ SVG;
 		$img = $this->setTagAttribute($img, "type", $this->extensionToMimeType($extension));
 		$img = $this->setTagAttribute($img, "sizes", $sizes_rule);
 
+		$picture_class = '';
+		if ($this->lazyload) {
+			$picture_class = " loading";
+			$img = $this->setTagAttribute($img, "loading", "lazy");
+			$img = $this->setTagAttribute($img, "onload", "this.parentNode.className+=' loaded'");
+		}
+
 		// markup can be adjusted in hook, depending on style and class
-		$markup = "<picture class=\"adapt-img-wrapper{$intrinsic} $cid $extension\" style=\"" . ($intrinsic ? "max-width:{$maxWidth1x}px;" : "") . "background-image:url($fallback_file)\">\n$sources\n$img</picture>";
+		$markup = "<picture class=\"adapt-img-wrapper{$picture_class}{$intrinsic} $cid $extension\" style=\"" . ($intrinsic ? "max-width:{$maxWidth1x}px;" : "") . "background-image:url($fallback_file)\">\n$sources\n$img</picture>";
 		$markup = $this->imgMarkupHook($markup, $originalClass, $originalStyle);
 
 		if ($style){
