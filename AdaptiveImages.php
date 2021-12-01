@@ -193,7 +193,7 @@ class AdaptiveImages {
 			if (!is_string($value)){
 				throw new InvalidArgumentException("Property {$property} needs a string value");
 			}
-		} elseif (in_array($property, array("defaultBkpts", "acceptedFormats"))) {
+		} elseif (in_array($property, array("defaultBkpts", "acceptedFormats", "alternativeFormats"))) {
 			if (!is_array($value)){
 				throw new InvalidArgumentException("Property {$property} needs an array value");
 			}
