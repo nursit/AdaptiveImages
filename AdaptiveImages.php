@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    2.3.4
+ * @version    2.3.5
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -350,7 +350,7 @@ class AdaptiveImages {
 						. ".adapt-img-wrapper.intrinsic{display:block}.adapt-img-wrapper.intrinsic::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic img{position:absolute;left:0;top:0;width:100%;height:auto;}"
 						. "@media (min-width:{$minwidthdesktop}px){.adapt-img-wrapper.intrinsic-desktop{display:block}.adapt-img-wrapper.intrinsic-desktop::before{content:'';display:block;height:0;width:100%;}.adapt-img-wrapper.intrinsic-desktop img{position:absolute;left:0;top:0;width:100%;height:auto;}}"
 						. ".adapt-img-background{width:100%;height:0}"
-						. "@media print{html .adapt-img-wrapper{background:none}"
+						. "@media print{html .adapt-img-wrapper{background:none}}"
 						. "</style>\n";
 					// JS that evaluate connection speed and add a aislow class on <html> if slow connection
 					// and onload JS that adds CSS to finish rendering
