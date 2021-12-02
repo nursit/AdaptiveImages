@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    3.1.1
+ * @version    3.1.2
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -736,7 +736,7 @@ JS;
 						$extension = $parts['extension'];
 						if (!in_array($extension, $this->acceptedFormats)
 							// don't do anyting if it's an animated GIF
-							or $extension=="gif" and $this->isAnimatedGif($src)){
+							or ($extension === "gif" and $this->isAnimatedGif($src))){
 							$adapt = false;
 						}
 					}
