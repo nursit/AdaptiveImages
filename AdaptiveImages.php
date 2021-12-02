@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    3.1.0
+ * @version    3.1.1
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -734,8 +734,9 @@ JS;
 					} else {
 						$parts = pathinfo($src);
 						$extension = $parts['extension'];
-						// don't do anyting if it's an animated GIF
-						if ($extension=="gif" and $this->isAnimatedGif($src)){
+						if (!in_array($extension, $this->acceptedFormats)
+							// don't do anyting if it's an animated GIF
+							or $extension=="gif" and $this->isAnimatedGif($src)){
 							$adapt = false;
 						}
 					}
