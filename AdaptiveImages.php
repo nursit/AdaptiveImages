@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    3.1.2
+ * @version    3.2.0
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -115,6 +115,14 @@ class AdaptiveImages {
 		'jpg' => array('webp')
 		*/
 	);
+
+	/**
+	 * separator used between source extension and alternative extension
+	 * ex .jpg@.webp
+	 * needed to neutralize jpg extension in Apache negotiation content strategy
+	 * @var string
+	 */
+	protected $alternativeFormatSeparator = '@';
 
 	/**
 	 * directory for storing adaptive images
@@ -550,9 +558,10 @@ JS;
 		$dir_dest = $this->destDirectory . "$wkpt/$x/";
 		$dest = $dir_dest . $this->adaptedSrcToURL($src);
 
-		// une variante de format de l'image d'origine ?
+		// format variation from the source image?
+		// we add a @ to neutralize the source extension vs Apache negociation Content
 		if (substr($dest, -strlen($extension)-1) !== ".{$extension}") {
-			$dest .= ".{$extension}";
+			$dest .= $this->alternativeFormatSeparator . ".{$extension}";
 		}
 
 		if (($exist = file_exists($dest)) and filemtime($dest)>=filemtime($src)){
@@ -637,14 +646,17 @@ JS;
 		$extension = null;
 
 		// extension not the same as the source file? (alternative format)
-		// type IMG/jpg/toto.jpg.webp
+		// type IMG/jpg/toto.jpg@.webp
+		// the @ is needed to neutralize the original extension
+		// otherwise Apache would match IMG/jpg/toto.jpg.webp as a valid existing file for IMG/jpg/toto.jpg
+		// due to negociation content strategy, this is not what we want
 		// TODO : check extension
 		if (!file_exists($src)
-		  and preg_match(',\.\w+\.(\w+)$,', $src, $m)
-		  //and in_array($m[1], $this->acceptedFormats)
+		  and preg_match(',\.\w+(' . $this->alternativeFormatSeparator . '?\.(\w+))$,', $src, $m)
+		  //and in_array($m[2], $this->acceptedFormats)
 		) {
-			$extension = $m[1];
-			$src = substr($src, 0, -strlen($extension)-1);
+			$extension = $m[2];
+			$src = substr($src, 0, -strlen($m[1]));
 		}
 
 		$parts = pathinfo($src);
@@ -1076,7 +1088,7 @@ SVG;
 					$ww = round($w*intval($kx)/10);
 					$srcset[$srcset_key][$kx][$extension][] = "$url {$ww}w";
 					foreach ($altExtensions as $e) {
-						$url = $this->filepath2URL($file.".".$e);
+						$url = $this->filepath2URL($file . $this->alternativeFormatSeparator . "." . $e);
 						$srcset[$srcset_key][$kx][$e][] = "$url {$ww}w";
 					}
 				}
