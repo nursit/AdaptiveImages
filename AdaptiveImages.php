@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    3.2.0
+ * @version    3.2.1
  * @copyright  2013-2021
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -1179,7 +1179,8 @@ SVG;
 		if ($srcset_base){
 			$img = $this->setTagAttribute($img, "srcset", $srcset_base);
 		}
-		$img = $this->setTagAttribute($img, "type", $this->extensionToMimeType($extension));
+		// no type="image/jpg" on <img ...> tag, this is not a valid attr
+		// $img = $this->setTagAttribute($img, "type", $this->extensionToMimeType($extension));
 		$img = $this->setTagAttribute($img, "sizes", $sizes_rule);
 
 		$picture_class = '';
