@@ -717,8 +717,11 @@ JS;
 		}
 
 		list($w, $h) = $this->imgSize($img);
-		$src = trim($this->tagAttribute($img, 'src'));
-		if (strlen($src)<1){
+		$src = $this->tagAttribute($img, 'src');
+		if (!is_null($src)) {
+			$src = trim($src);
+		}
+		if (is_null($src) or strlen($src)<1){
 			$src = $img;
 			$img = "<img src='" . $src . "' />";
 		}
