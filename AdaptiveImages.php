@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    3.2.2
+ * @version    3.2.3
  * @copyright  2013-2022
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -1746,6 +1746,13 @@ SVG;
 				if ($destExt=="png"){
 					// keep transparency
 					@imagesavealpha($srcImage, true);
+				}
+
+				// if source is palette colors but this is not supported by dest, convert the image
+				if (in_array($srcExt, array('png', 'gif'))
+				  and !in_array($destExt, array('png', 'gif'))
+				  and !imageistruecolor($srcImage)) {
+					$this->imagepalettetotruecolor($srcImage);
 				}
 
 				// save destination image
