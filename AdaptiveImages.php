@@ -2,8 +2,8 @@
 /**
  * AdaptiveImages
  *
- * @version    3.2.1
- * @copyright  2013-2021
+ * @version    3.2.2
+ * @copyright  2013-2022
  * @author     Nursit
  * @licence    GNU/GPL3
  * @source     https://github.com/nursit/AdaptiveImages
@@ -1785,7 +1785,7 @@ SVG;
 				// if transparent GIF, keep the transparency
 				if ($srcExt=="gif"){
 					$transparent_index = ImageColorTransparent($srcImage);
-					if ($transparent_index!=(-1)){
+					if ($transparent_index >= 0 and $transparent_index < ImageColorsTotal($srcImage)){
 						$transparent_color = ImageColorsForIndex($srcImage, $transparent_index);
 						if (!empty($transparent_color)){
 							$transparent_new = ImageColorAllocate($destImage, $transparent_color['red'], $transparent_color['green'], $transparent_color['blue']);
