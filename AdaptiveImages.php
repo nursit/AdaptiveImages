@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    3.2.3
+ * @version    3.2.4
  * @copyright  2013-2022
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -2012,7 +2012,7 @@ SVG;
 	 */
 	protected function saveGDImage($img, $infos, $quality = null){
 		$fichier = $infos['fichier_dest'];
-		$tmp = $fichier . ".tmp";
+		$tmp = $fichier . "-tmp";
 		switch ($infos['format_dest']) {
 			case "gif":
 				$ret = imagegif($img, $tmp);
