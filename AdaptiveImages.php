@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    3.2.4
+ * @version    3.2.5
  * @copyright  2013-2022
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -1340,7 +1340,13 @@ SVG;
 			$source = $img;
 		} else {
 			$srcWidth = $this->tagAttribute($img, 'width');
+			if ($srcWidth and !ctype_digit(strval($srcWidth))) {
+				$srcWidth = intval($srcWidth);
+			}
 			$srcHeight = $this->tagAttribute($img, 'height');
+			if ($srcHeight and !ctype_digit(strval($srcHeight))) {
+				$srcHeight = intval($srcHeight);
+			}
 			if ($srcWidth and $srcHeight){
 				return array($srcWidth, $srcHeight);
 			}
