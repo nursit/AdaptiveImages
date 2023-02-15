@@ -425,7 +425,7 @@ JS;
 			$file = '';
 		}
 		if (! $file or ! $mime) {
-			http_status(404);
+			\http_response_code(404);
 			throw new InvalidArgumentException("Unable to find {$path} image");
 		}
 

@@ -123,7 +123,7 @@ function action_adapt_img_dist(){
 		$AdaptiveImages->deliverBkptImage(_request('arg'));
 	}
 	catch (Exception $e){
-		http_status(404);
+		\http_response_code(404);
 		die('Error : '.$e->getMessage());
 	}
 	exit;
