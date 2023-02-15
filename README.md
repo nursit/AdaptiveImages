@@ -7,9 +7,7 @@ See <https://openweb.eu.org/277> for technical explanations and justifications (
 
 ## Requirements
 
-PHP>=5.1 with GD library
-(if PHP<5.3.0 extending `AdaptiveImages` also needs to override method `getInstance()`)
-
+PHP >= 7.3
 
 ## Using
 
@@ -125,7 +123,7 @@ function action_adapt_img_dist(){
 		$AdaptiveImages->deliverBkptImage(_request('arg'));
 	}
 	catch (Exception $e){
-		http_status(404);
+		\http_response_code(404);
 		die('Error : '.$e->getMessage());
 	}
 	exit;
