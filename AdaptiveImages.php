@@ -717,11 +717,8 @@ JS;
 		}
 
 		list($w, $h) = $this->imgSize($img);
-		$src = $this->tagAttribute($img, 'src');
-		if (!is_null($src)) {
-			$src = trim($src);
-		}
-		if (is_null($src) or strlen($src)<1){
+		$src = trim($this->tagAttribute($img, 'src') ?? '');
+		if (strlen($src)<1){
 			$src = $img;
 			$img = "<img src='" . $src . "' />";
 		}
@@ -731,7 +728,7 @@ JS;
 		if (!$w or $w<=$this->minWidth1x){
 			$adapt = false;
 		} else {
-			$srcMobile = $this->tagAttribute($img, 'data-src-mobile');
+			$srcMobile = $this->tagAttribute($img, 'data-src-mobile') ?? '';
 
 			// don't do anything with data-URI images
 			if (strncmp($src, "data:", 5)==0){
@@ -956,7 +953,7 @@ JS;
 	 * @return string
 	 */
 	protected function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $sizes = null, $asBackground = false){
-		$class = $this->tagAttribute($img, "class");
+		$class = $this->tagAttribute($img, "class") ?? '';
 		if (!$width or strpos($class, "adapt-img")!==false){
 			return $img;
 		}
@@ -1019,7 +1016,7 @@ JS;
 	 * @return string
 	 */
 	protected function imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile = null, $sizes = null){
-		$originalClass = $class = $this->tagAttribute($img, "class");
+		$originalClass = $class = $this->tagAttribute($img, "class") ?? '';
 		$intrinsic = "";
 		if (strpos(" $class ", " intrinsic ")!==false){
 			$intrinsic = " intrinsic";
