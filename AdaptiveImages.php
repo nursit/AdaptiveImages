@@ -12,7 +12,7 @@
 
 class AdaptiveImages {
 	/**
-	 * @var Array
+	 * @var array
 	 */
 	static protected $instances = array();
 
@@ -744,11 +744,10 @@ JS;
 				} else {
 					// Don't do anything if img filesize is to small
 					$filesize = @filesize($src);
+					$extension = \pathinfo($src, \PATHINFO_EXTENSION);
 					if ($filesize and $filesize<$this->minFileSize){
 						$adapt = false;
 					} else {
-						$parts = pathinfo($src);
-						$extension = $parts['extension'];
 						if (!in_array($extension, $this->acceptedFormats)
 							// don't do anyting if it's an animated GIF
 							or ($extension === "gif" and $this->isAnimatedGif($src))){
