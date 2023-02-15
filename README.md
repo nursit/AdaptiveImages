@@ -7,9 +7,7 @@ See <https://openweb.eu.org/277> for technical explanations and justifications (
 
 ## Requirements
 
-PHP>=5.1 with GD library
-(if PHP<5.3.0 extending `AdaptiveImages` also needs to override method `getInstance()`)
-
+PHP >= 7.3
 
 ## Using
 
