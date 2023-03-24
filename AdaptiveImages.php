@@ -741,14 +741,15 @@ JS;
 				// don't do anyting if we can't find file
 				if (!$src or !file_exists($src)){
 					$adapt = false;
+					$extension = '';
 				} else {
 					// Don't do anything if img filesize is to small
+					$parts = pathinfo($src);
+					$extension = $parts['extension'];
 					$filesize = @filesize($src);
 					if ($filesize and $filesize<$this->minFileSize){
 						$adapt = false;
 					} else {
-						$parts = pathinfo($src);
-						$extension = $parts['extension'];
 						if (!in_array($extension, $this->acceptedFormats)
 							// don't do anyting if it's an animated GIF
 							or ($extension === "gif" and $this->isAnimatedGif($src))){
