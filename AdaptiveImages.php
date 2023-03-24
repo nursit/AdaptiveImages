@@ -958,6 +958,7 @@ JS;
 	 */
 	protected function imgAdaptiveMarkup($img, $bkptImages, $width, $height, $extension, $maxWidth1x, $sizes = null, $asBackground = false){
 		$class = $this->tagAttribute($img, "class");
+		$class = is_null($class) ? '' : $class;
 		if (!$width or strpos($class, "adapt-img")!==false){
 			return $img;
 		}
@@ -1020,7 +1021,9 @@ JS;
 	 * @return string
 	 */
 	protected function imgAdaptiveSrcsetMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $maxWidthMobile = null, $sizes = null){
-		$originalClass = $class = $this->tagAttribute($img, "class");
+		$class = $this->tagAttribute($img, "class");
+		$class = is_null($class) ? '' : $class;
+		$originalClass = $class;
 		$intrinsic = "";
 		if (strpos(" $class ", " intrinsic ")!==false){
 			$intrinsic = " intrinsic";
@@ -1227,7 +1230,9 @@ SVG;
 	 * @return string
 	 */
 	protected function imgAdaptive3LayersMarkup($img, $fallback_file, $fallback_class, $bkptImages, $width, $height, $extension, $maxWidth1x, $asBackground = false){
-		$originalClass = $class = $this->tagAttribute($img, "class");
+		$class = $this->tagAttribute($img, "class");
+		$class = is_null($class) ? '' : $class;
+		$originalClass = $class;
 
 		$cid = "c" . crc32(serialize($bkptImages));
 		$style = "";
@@ -1886,7 +1891,8 @@ SVG;
 		}
 		$ret = array();
 
-		$source = trim($this->tagAttribute($img, 'src'));
+		$source = $this->tagAttribute($img, 'src');
+		$source = is_null($source) ? '' : trim($source);
 		if (strlen($source)<1){
 			$source = $img;
 			$img = "<img src='$source' />";
