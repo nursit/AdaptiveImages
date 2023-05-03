@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    3.2.5
+ * @version    3.3.0
  * @copyright  2013-2022
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -276,6 +276,23 @@ class AdaptiveImages {
 			$filepath = "$filepath?$t";
 		}
 		return $filepath;
+	}
+
+	/**
+	 * Wrapper for filepath2URL with a precheck on filepath freshness and file removal if too old
+	 * @param string $filepath
+	 * @param int $originalSrcTimestamp
+	 * @param bool $relative
+	 * @return string
+	 */
+	protected function filepath2URLwFreshnessCheck($filepath, $originalSrcTimestamp, $relative = false){
+		if ($originalSrcTimestamp
+			and $t = @filemtime($filepath)
+			and $t < $originalSrcTimestamp) {
+			@unlink($filepath);
+			clearstatcache();
+		}
+		return $this->filepath2URL($filepath, $relative);
 	}
 
 	/**
@@ -1051,9 +1068,13 @@ SVG;
 
 		$srcset = array();
 		$extensions = array($extension);
+		$originalSrcTimestamp = 0;
 		// si on est en "onDemand" on peut proposer des formats alternatifs dans la liste
 		// sinon c'est trop couteux de generer au calcul toutes les variantes pour chaque image
 		if (!empty($this->alternativeFormats[$extension]) and $this->onDemandImages) {
+			$originalSrc = $this->tagAttribute($img, 'src');
+			$originalSrc = $this->URL2filepath($originalSrc);
+			$originalSrcTimestamp = filemtime($originalSrc);
 			foreach ($this->alternativeFormats[$extension] as $altExt) {
 				if (in_array($altExt, array('webp'))) {
 					array_unshift($extensions, $altExt);
@@ -1091,11 +1112,12 @@ SVG;
 					$srcset_key = 'mobile';
 				}
 				if (isset($srcset[$srcset_key][$kx])){
-					$url = $this->filepath2URL($file);
+					$url = $this->filepath2URLwFreshnessCheck($file, $originalSrcTimestamp);
 					$ww = round($w*intval($kx)/10);
 					$srcset[$srcset_key][$kx][$extension][] = "$url {$ww}w";
 					foreach ($altExtensions as $e) {
-						$url = $this->filepath2URL($file . $this->alternativeFormatSeparator . "." . $e);
+						$altFile = $file . $this->alternativeFormatSeparator . "." . $e;
+						$url = $this->filepath2URLwFreshnessCheck($altFile, $originalSrcTimestamp);
 						$srcset[$srcset_key][$kx][$e][] = "$url {$ww}w";
 					}
 				}
