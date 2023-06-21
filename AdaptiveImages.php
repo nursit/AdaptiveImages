@@ -891,10 +891,19 @@ JS;
 
 
 					$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
-					$fallback = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wfallback, $wfallback, '10x', $extension, true, $q);
-					// if it's already a jpg nothing more to do here, otherwise double compress produce artefacts
-					if ($extension==='jpg'){
+					if ($extension !== 'jpg'
+						and !empty($this->alternativeFormats[$extension])
+						and in_array('webp', $this->alternativeFormats[$extension])
+					) {
+						$fallback = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wfallback, $wfallback, '10x', 'webp', true, $q);
 						$process_fallback = false;
+					}
+					else {
+						$fallback = $this->processBkptImage($is_mobile ? $srcMobile : $src, $wfallback, $wfallback, '10x', $extension, true, $q);
+						// if it's already a jpg nothing more to do here, otherwise double compress produce artefacts
+						if ($extension==='jpg'){
+							$process_fallback = false;
+						}
 					}
 				}
 
@@ -910,7 +919,7 @@ JS;
 					$q = $this->lowsrcQualityOptimize($wfallback, $this->lowsrcJpgQuality, $w, $h, $maxWidth1x);
 					$images["fallback"] = $this->img2JPG($fallback, $fallback_directory, $this->lowsrcJpgBgColor, $q);
 				} else {
-					$infos = $this->readSourceImage($fallback, $fallback_directory, 'jpg');
+					$infos = $this->readSourceImage($fallback, $fallback_directory);
 					if ($infos['creer']){
 						@copy($fallback, $infos["fichier_dest"]);
 					}
