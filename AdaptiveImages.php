@@ -2,8 +2,8 @@
 /**
  * AdaptiveImages
  *
- * @version    3.3.0
- * @copyright  2013-2022
+ * @version    3.4.0
+ * @copyright  2013-2023
  * @author     Nursit
  * @licence    GNU/GPL3
  * @source     https://github.com/nursit/AdaptiveImages
