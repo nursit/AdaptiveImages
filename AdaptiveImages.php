@@ -1073,8 +1073,8 @@ SVG;
 		// sinon c'est trop couteux de generer au calcul toutes les variantes pour chaque image
 		if (!empty($this->alternativeFormats[$extension]) and $this->onDemandImages) {
 			$originalSrc = $this->tagAttribute($img, 'src');
-			$originalSrc = $this->URL2filepath($originalSrc);
-			$originalSrcTimestamp = filemtime($originalSrc);
+			$originalSrc = is_null($originalSrc) ? '' : $this->URL2filepath($originalSrc);
+			$originalSrcTimestamp = $originalSrc ? filemtime($originalSrc) : '';
 			foreach ($this->alternativeFormats[$extension] as $altExt) {
 				if (in_array($altExt, array('webp'))) {
 					array_unshift($extensions, $altExt);
@@ -1131,6 +1131,7 @@ SVG;
 		// Media-Queries
 		$style = "";
 		$originalStyle = $this->tagAttribute($img, "style");
+		$originalStyle = (is_null($originalStyle) ? '' : $originalStyle);
 		if ($intrinsic){
 			$ratio = round($height/$width*100, 2);
 			// if there is a mobile variation, set the intrinsic only in desktop version, cause the mobile image could have different ratio
@@ -1323,6 +1324,7 @@ SVG;
 		// Media-Queries
 		$style .= implode("", $medias);
 		$originalStyle = $this->tagAttribute($img, "style");
+		$originalStyle = (is_null($originalStyle) ? '' : $originalStyle);
 
 		if ($asBackground){
 			// if we just want a background image: a span with a class
