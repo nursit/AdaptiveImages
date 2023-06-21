@@ -1069,7 +1069,7 @@ JS;
 			$blurstd = round($width / 100, 1);
 			$svg_wrapper = <<<SVG
 <svg viewBox="0 0 $width $height" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<filter id="blur"><feGaussianBlur stdDeviation="$blurstd $blurstd" edgeMode="duplicate" /><feComponentTransfer><feFuncA type="discrete" tableValues="1 1" /></feComponentTransfer></filter>
+<filter id="blur"><feGaussianBlur stdDeviation="$blurstd $blurstd" /></filter>
 <image filter="url(#blur)" width="$width" height="$height" xlink:href="$fallback_file" preserveAspectRatio="none"/></svg>
 SVG;
 			$fallback_file = 'data:' . $this->extensionToMimeType('svg') . ';base64,' . base64_encode($svg_wrapper);
