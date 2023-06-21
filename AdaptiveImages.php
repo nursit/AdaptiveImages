@@ -1779,7 +1779,7 @@ SVG;
 					throw new Exception("GD image creation fail for {$srcFile}");
 				}
 
-				if ($destExt=="png"){
+				if (in_array($srcExt, ['png', 'gif', 'webp']) and in_array($destExt, ['png', 'webp'])) {
 					// keep transparency
 					@imagesavealpha($srcImage, true);
 				}
@@ -1837,7 +1837,7 @@ SVG;
 						}
 					}
 				}
-				if ($destExt=="png" or ($srcExt=="png" and $destExt=="webp")){
+				if (in_array($srcExt, ['png', 'gif', 'webp']) and in_array($destExt, ['png', 'webp'])) {
 					// keep transparency
 					if (function_exists("imageAntiAlias")){
 						imageAntiAlias($destImage, true);
