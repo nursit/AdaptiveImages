@@ -1938,7 +1938,7 @@ SVG;
 		}
 
 		$extension_dest = "";
-		if (preg_match(",\.(gif|jpe?g|png)($|[?]),i", $source, $regs)){
+		if (preg_match(",\.(gif|jpe?g|png|webp)($|[?]),i", $source, $regs)){
 			$extension = strtolower($regs[1]);
 			$extension_dest = $extension;
 		}
