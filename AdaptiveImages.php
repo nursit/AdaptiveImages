@@ -1689,12 +1689,12 @@ SVG;
 								$b = $db;
 
 							} else {
-								$r = round($a*$r+$dr*(1-$a));
-								$g = round($a*$g+$dv*(1-$a));
-								$b = round($a*$b+$db*(1-$a));
+								$r = (int) round($a*$r+$dr*(1-$a));
+								$g = (int) round($a*$g+$dv*(1-$a));
+								$b = (int) round($a*$b+$db*(1-$a));
 							}
 						}
-						$a = (1-$a)*127;
+						$a = (int) round((1-$a)*127);
 						$color = ImageColorAllocateAlpha($im_, $r, $g, $b, $a);
 						imagesetpixel($im_, $x, $y, $color);
 					}
