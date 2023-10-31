@@ -2,7 +2,7 @@
 /**
  * AdaptiveImages
  *
- * @version    3.4.0
+ * @version    3.5.0
  * @copyright  2013-2023
  * @author     Nursit
  * @licence    GNU/GPL3
@@ -939,6 +939,15 @@ JS;
 			$img = $this->setTagAttribute($img, "width", $w);
 			$img = $this->setTagAttribute($img, "height", $h);
 		}
+		else {
+			list($w, $h) = $this->imgSize($src);
+			if ($w > $maxWidth1x) {
+				list($w, $h) = $this->computeImageSize($w, $h, $maxWidth1x, $h);
+				$img = $this->setTagAttribute($img, "width", $w);
+				$img = $this->setTagAttribute($img, "height", $h);
+			}
+		}
+
 		// ok, now build the markup
 		return $this->imgAdaptiveMarkup($img, $images, $w, $h, $extension, $maxWidth1x, $sizes, $asBackground);
 	}
