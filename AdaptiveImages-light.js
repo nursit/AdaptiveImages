@@ -66,7 +66,7 @@
 	}
 
 	if (typeof jQuery!=='undefined') jQuery(function (){
-		jQuery(window).load(adaptImg_onload)
+		jQuery(window).on('load',adaptImg_onload);
 	}); else addLoadEvent(adaptImg_onload);
 
 	// print issue : fix all img
